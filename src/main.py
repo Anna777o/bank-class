@@ -1,5 +1,5 @@
-from models import BankAccount
-from utils import AccountFrozenError, InsufficientFundsError
+from models import BankAccount, SavingsAccount, PremiumAccount, InvestmentAccount
+from utils import AccountFrozenError, InsufficientFundsError, InvalidOperationError
 
 def run_demo():
     #day1
@@ -38,7 +38,7 @@ def run_demo():
         print(f"Error: {e}")
     #day2
     # 1. SavingsAccount
-    saving_acc = SavingsAccount(wner="Анна", balance=1000.0, min_balance=500.0, monthly_interest_rate=0.05)
+    saving_acc = SavingsAccount(owner="Анна", balance=1000.0, min_balance=500.0, interest_rate=0.05)
     print(saving_acc)
 
     try:
@@ -57,7 +57,7 @@ def run_demo():
     
     try:
         premium_acc.withdraw(500.0)
-    except nvalidOperationError as e:
+    except InvalidOperationError as e:
         print(f"Expected error {e}")
     # 3. InvestmentAccount
     invest_acc = InvestmentAccount(owner="Мария", balance=5000.0, currency="USD")
@@ -67,6 +67,7 @@ def run_demo():
     print(invest_acc)
 
     growth_rates = {"stocks": 0.10, "bonds": 0.04, "etf": 0.07}
+    print(growth_rates)
     projected = invest_acc.project_yearly_growth(growth_rates)
     print(f"Expected in the end of the year: {projected:.2f} USD")
     print(f" Expected growth: {projected - 3000.0:.2f} USD")

@@ -16,6 +16,7 @@ class InsufficientFundsError(BankGeneralError):
     pass
 def validate_amount(amount: float) -> None:
     """Validate that the amount is a positive number."""
+    print(f"DEBUG | amount={amount!r} | type={type(amount)} | int={int} | float={float} | isinstance={isinstance(amount, (int, float))}")
     if not isinstance(amount, (int, float)):
         raise InvalidOperationError("Сумма должна быть числом.")
     if amount <= 0:

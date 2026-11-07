@@ -120,7 +120,7 @@ class PremiumAccount(BankAccount):
         validate_amount(amount)
         total = amount + self.commission
         if self.balance - total < -self.overdraft_limit:
-            raise InvalidOperationError(f"Impossible to withdraw. Overdraft limit exceeded ({self.overdraft_limit} {self.currency}).")  
+            raise InsufficientFundsError(f"Impossible to withdraw. Overdraft limit exceeded ({self.overdraft_limit} {self.currency}).")  
         self.balance -= total
         print(f"[{self.account_id}] Commission: {self.commission} {self.currency}. new balance: {self.balance:.2f}")
 
@@ -143,18 +143,18 @@ class InvestmentAccount(BankAccount):
         super().__init__(owner, account_id, balance, currency)
         self.portfolio = {asset: 0.0 for asset in self.VALID_ASSETS}
 
-    def invest(self, amount: float, option: str) -> None:
+    def invest(self, option: str, amount: float) -> None:
         self.check_status()
         validate_amount(amount)
         if option not in self.VALID_ASSETS:
             raise InvalidOperationError(f"Invalid investment option: {option}")
         if self.balance < amount:
-            raise InvalidOperationError("Insufficient funds for investment.")
+            raise InsufficientFundsError("Insufficient funds for investment.")
         self.balance -= amount
         self.portfolio[option] += amount
         print(f"[{self.account_id}] Invested {amount} {self.currency} in {option}. New balance: {self.balance:.2f}")
 
-    def project_yearly_growth(growth_rates) -> dict:
+    def project_yearly_growth(self,growth_rates) -> dict:
         yearly_total = 0.0
         for asset, amount in self.portfolio.items():
             rate = growth_rates.get(asset, 0.0)
