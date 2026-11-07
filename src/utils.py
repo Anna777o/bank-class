@@ -1,3 +1,4 @@
+#day1
 class BankGeneralError(Exception):
     """Base class for all bank-related exceptions."""
     pass
@@ -19,3 +20,4 @@ def validate_amount(amount: float) -> None:
         raise InvalidOperationError("Сумма должна быть числом.")
     if amount <= 0:
         raise InvalidOperationError("Amount must be a positive number.")
+#day2
