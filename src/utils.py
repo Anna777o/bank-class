@@ -21,4 +21,28 @@ def validate_amount(amount: float) -> None:
         raise InvalidOperationError("Сумма должна быть числом.")
     if amount <= 0:
         raise InvalidOperationError("Amount must be a positive number.")
-#day2
+#day3
+
+class ClientNotAdultError(InvalidOperationError):
+    """Validate that client is 18 years old or older"""
+    pass
+
+class ClientNotFoundError(BankGeneralError):
+    """Client is not found in system"""
+    pass
+
+class AccountNotFoundError(BankGeneralError):
+    """Client account is not found in system"""
+    pass
+
+class ClientBlockedError(BankGeneralError):
+    """Client is blocked"""
+    pass
+
+class AuthenticationError(BankGeneralError):
+    """Client authentication failed"""
+    pass
+
+class RestrictedTimeError(BankGeneralError):
+    """Bank operation is prohibited during night"""
+    pass
