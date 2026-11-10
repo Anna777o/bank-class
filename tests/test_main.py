@@ -4,12 +4,13 @@ import os
 import hashlib
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 from datetime import date, datetime, timedelta
-from models import BankAccount, SavingsAccount, PremiumAccount, InvestmentAccount, Client, Bank
+from models import BankAccount, SavingsAccount, PremiumAccount, InvestmentAccount, Client, Bank, Transaction, TransactionQueue, TransactionProcessor
 from utils import (
     ClientNotAdultError, ClientBlockedError, AuthenticationError,
     RestrictedTimeError, AccountNotFoundError, ClientNotAdultError, AccountClosedError,
     AccountFrozenError, InvalidOperationError, InsufficientFundsError, validate_amount
 )
+from currency_converter import CurrencyConverter
 
 #test for day1
 def test_deposit_valid():
@@ -242,3 +243,291 @@ def test_search_by_status(bank, anna):
     bank.freeze_account(a2.account_id)
     assert bank.search_accounts(status="active") == [a1]
     assert bank.search_accounts(status="frozen") == [a2]
+
+#day4
+def test_same_currency_no_conversion():
+    conv = CurrencyConverter()
+    assert conv.convert(100.0, "RUB", "RUB") == 100.0
+
+
+def test_same_currency_does_not_need_rate():
+    
+    conv = CurrencyConverter({})  # пустой
+    assert conv.convert(50.0, "RUB", "RUB") == 50.0
+
+
+def test_usd_to_rub():
+    conv = CurrencyConverter({("USD", "RUB"): 90.0})
+    assert conv.convert(100.0, "USD", "RUB") == pytest.approx(9000.0)
+
+def test_transaction_valid_transfer():
+    tx = Transaction("transfer", 100.0, "RUB", from_account_id="a1", to_account_id="a2", commission=5.0)
+    assert tx.status == "pending", tx.failure_reason is None
+    assert tx.failure_code is None, tx.attempts == 0
+    assert tx.id
+    assert len(tx.id) == 8 
+
+def test_transaction_transfer_requires_both_ids():
+    with pytest.raises(InvalidOperationError):
+        Transaction("transfer", 100, "RUB", from_account_id="a1")
+    with pytest.raises(InvalidOperationError):
+        Transaction("transfer", 100, "RUB", to_account_id="a2")
+    with pytest.raises(InvalidOperationError):
+        Transaction("transfer", 100, "RUB")
+
+def test_transaction_self_transfer_raises():
+    with pytest.raises(InvalidOperationError):
+        Transaction("transfer", 100, "RUB", from_account_id="a1", to_account_id="a1")
+def test_transaction_negative_commission_raises():
+    with pytest.raises(InvalidOperationError):
+        Transaction("transfer", 100, "RUB", from_account_id="a1", to_account_id="a2", commission = -1)
+
+def test_total_debit_property():
+    tx = Transaction("transfer", 100, "RUB", from_account_id="a1", to_account_id="a2", commission = 10)
+    assert tx.total_debit == 110
+
+NOW = lambda: datetime(2024, 1, 1, 12, 0)
+def test_fifo_same_priority():
+   
+    t1 = Transaction("transfer", 100, "RUB",
+                     from_account_id="src", to_account_id="dst",
+                     commission=0, transaction_id="a",
+                     priority=5, now_provider=NOW)
+    t2 = Transaction("transfer", 200, "RUB",
+                     from_account_id="src", to_account_id="dst",
+                     commission=0, transaction_id="b",
+                     priority=5, now_provider=NOW)
+    t3 = Transaction("transfer", 300, "RUB",
+                     from_account_id="src", to_account_id="dst",
+                     commission=0, transaction_id="c",
+                     priority=5, now_provider=NOW)
+
+    q = TransactionQueue(now_provider=NOW)
+    q.enqueue(t1); q.enqueue(t2); q.enqueue(t3)
+
+    assert q.dequeue() is t1
+    assert q.dequeue() is t2
+    assert q.dequeue() is t3
+
+def test_priority_order():
+   
+    t1 = Transaction("transfer", 100, "RUB",
+                     from_account_id="src", to_account_id="dst",
+                     commission=0, transaction_id="a",
+                     priority=1, now_provider=NOW)
+    t2 = Transaction("transfer", 200, "RUB",
+                     from_account_id="src", to_account_id="dst",
+                     commission=0, transaction_id="b",
+                     priority=10, now_provider=NOW)
+    q = TransactionQueue()
+    q.enqueue(t1)
+    q.enqueue(t2)
+    assert q.dequeue() is t1; q.dequeue() is t2
+
+def test_scheduled_not_ready_returns_none():
+    q = TransactionQueue(now_provider=lambda: datetime(2024, 1, 1, 12, 0))
+    tx = Transaction("transfer", 100, "RUB",
+                     from_account_id="src", to_account_id="dst",
+                     commission=0, transaction_id="a",
+                     priority=1, scheduled_at=datetime(2024, 1, 1, 18, 0))
+    q.enqueue(tx)
+    assert q.dequeue() is None
+    assert len(q) == 0
+
+def test_cancel_unknown_returns_false(q):
+    q = TransactionQueue(now_provider=lambda: datetime(2024, 1, 1, 12, 0))
+    assert q.cancel("nonexistent") is False
+
+def test_cancel_twice_is_idempotent(q, make_tx):
+    q = TransactionQueue(now_provider=lambda: datetime(2024, 1, 1, 12, 0))
+    tx = Transaction("transfer", 100, "RUB", id = "x",
+                     from_account_id="src", to_account_id="dst",
+                     commission=0, transaction_id="a",
+                     priority=1, now_provider=NOW)
+    q.enqueue(tx)
+
+    assert q.cancel("x") is True       
+    assert q.cancel("x") is False      
+    assert tx.status == "cancelled"    
+
+
+@pytest.fixture
+def bank():
+    return Bank(now_provider=NOW)
+
+
+@pytest.fixture
+def converter():
+    return CurrencyConverter({("USD", "RUB"): 90.0, ("RUB", "USD"): 0.011})
+
+
+@pytest.fixture
+def queue():
+    return TransactionQueue(now_provider=NOW)
+
+
+@pytest.fixture
+def processor(bank, queue, converter):
+    return TransactionProcessor(bank, queue, converter)
+
+
+@pytest.fixture
+def two_clients(bank):
+    anna = Client("Анна", date(1990, 5, 15), {}, "anna_pass")
+    oleg = Client("Олег", date(1985, 9, 1), {}, "oleg_pass")
+    bank.add_client(anna)
+    bank.add_client(oleg)
+    return anna, oleg
+
+
+@pytest.fixture
+def accounts(bank, two_clients):
+    anna, oleg = two_clients
+    src = bank.open_account(anna.client_id, "basic", balance=1000, currency="RUB")
+    dst = bank.open_account(oleg.client_id, "basic", balance=0, currency="RUB")
+    return src, dst
+
+
+
+def test_transfer_same_currency_success(processor, queue, accounts):
+   
+    src, dst = accounts
+
+    tx = Transaction(
+        "transfer", 100, "RUB",
+        from_account_id=src.account_id,
+        to_account_id=dst.account_id,
+        commission=5,
+        transaction_id="t1",
+        now_provider=NOW,
+    )
+    queue.enqueue(tx)
+
+    result = processor.process_one()
+
+
+    assert result is True
+    assert tx.status == "completed"
+    assert tx.failure_reason is None
+    assert tx.failure_code is None
+    assert tx.processed_at is not None
+    assert src.balance == pytest.approx(895.0)   
+    assert dst.balance == pytest.approx(100.0)   
+    assert tx not in queue.failed          
+
+
+
+def test_transfer_insufficient_funds_no_balance_change(processor, queue, bank, two_clients):
+   
+    anna, oleg = two_clients
+    src = bank.open_account(anna.client_id, "basic", balance=50, currency="RUB")
+    dst = bank.open_account(oleg.client_id, "basic", balance=0, currency="RUB")
+
+    tx = Transaction(
+        "transfer", 100, "RUB",
+        from_account_id=src.account_id,
+        to_account_id=dst.account_id,
+        commission=0,
+        transaction_id="t1",
+        now_provider=NOW,
+    )
+    queue.enqueue(tx)
+
+    result = processor.process_one()
+
+    # Провал
+    assert result is False
+    assert tx.status == "failed"
+    assert tx.failure_code == "insufficient_funds"
+    assert tx.failure_reason  
+    assert tx.attempts == 1   
+
+    
+    assert src.balance == 50
+    assert dst.balance == 0
+    assert tx in queue.failed
+
+
+def test_transfer_to_frozen_destination_fails(processor, queue, accounts):
+    """Проверяет, что _get_active_account вызывается и для ПОЛУЧАТЕЛЯ тоже."""
+    src, dst = accounts
+    dst.freeze()
+    
+    processor.RETRYABLE_ERRORS = ()
+
+    tx = Transaction(
+        "transfer", 100, "RUB",
+        from_account_id=src.account_id,
+        to_account_id=dst.account_id,
+        commission=0,
+        transaction_id="t1",
+        now_provider=NOW,
+    )
+    queue.enqueue(tx)
+
+    result = processor.process_one()
+
+    assert result is False
+    assert tx.status == "failed"
+    assert tx.failure_code == "account_frozen"
+    
+    assert src.balance == 1000
+    assert dst.balance == 0
+
+
+
+def test_retry_exhausted_moves_to_dead_letter(processor, queue, accounts):
+    """AccountFrozenError retryable: 3 попытки → failed → dead-letter."""
+    src, dst = accounts
+    src.freeze()
+    assert AccountFrozenError in processor.RETRYABLE_ERRORS
+
+    tx2 = Transaction(
+        "transfer", 100, "RUB",
+        from_account_id=src.account_id,
+        to_account_id=dst.account_id,
+        commission=0,
+        transaction_id="t2",
+        max_attempts=3,
+        now_provider=NOW,
+    )
+    queue.enqueue(tx2)
+
+    
+    for _ in range(3):
+        processor.process_one()
+
+    assert tx2.status == "failed"
+    assert tx2.attempts == 3
+    assert tx2.failure_code == "account_frozen"
+    assert tx2 in queue.failed
+    assert len(queue.failed) == 1
+    
+    assert src.balance == 1000
+
+
+
+def test_transfer_different_currency_converts(processor, queue, bank, two_clients):
+    """USD→RUB: комиссия в валюте источника, конвертируется ТОЛЬКО amount."""
+    anna, oleg = two_clients
+    src = bank.open_account(anna.client_id, "basic", balance=1000, currency="USD")
+    dst = bank.open_account(oleg.client_id, "basic", balance=0, currency="RUB")
+
+    tx = Transaction(
+        "transfer", 100, "USD",
+        from_account_id=src.account_id,
+        to_account_id=dst.account_id,
+        commission=5,          # 5 USD — в валюте источника
+        transaction_id="t1",
+        now_provider=NOW,
+    )
+    queue.enqueue(tx)
+
+    result = processor.process_one()
+
+    assert result is True
+    assert tx.status == "completed"
+    
+    assert src.balance == pytest.approx(895.0)
+   
+    assert dst.balance == pytest.approx(9000.0)
