@@ -46,3 +46,5 @@ class AuthenticationError(BankGeneralError):
 class RestrictedTimeError(BankGeneralError):
     """Bank operation is prohibited during night"""
     pass
+class SuspiciousTransactionError(BankGeneralError):
+    pass
