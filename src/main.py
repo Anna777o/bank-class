@@ -4,6 +4,7 @@ from utils import (
     RestrictedTimeError, AccountNotFoundError, ClientNotAdultError, AccountClosedError,
     AccountFrozenError, InvalidOperationError, InsufficientFundsError, validate_amount
 )
+from scenario import run_full_scenario
 from currency_converter import CurrencyConverter
 import json
 import logging
@@ -556,7 +557,8 @@ def demo_time_restriction() -> None:
 
 
 if __name__ == "__main__":
-    run_demo()
-    run_10_transactions_demo()
-    demo_main()
+    #run_demo()
+    #run_10_transactions_demo()
+    #demo_main()
+    run_full_scenario()
  

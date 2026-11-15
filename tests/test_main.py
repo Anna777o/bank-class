@@ -599,7 +599,6 @@ def test_entry_to_json_roundtrip():
     assert restored.metadata == e.metadata
 
 
-# ---------- AuditLog: память ----------
 def test_log_info_adds_entry():
     log = AuditLog(now_provider=NOW)
     log.info("test", "message", client_id="c1")
@@ -648,7 +647,7 @@ def test_clear_memory():
     assert len(log) == 0
 
 
-# ---------- AuditLog: фильтрация ----------
+
 def test_filter_by_level():
     log = AuditLog(now_provider=NOW)
     log.info("a", "1")
@@ -741,7 +740,6 @@ def test_filter_returns_copy():
     assert len(log) == 1
 
 
-# ---------- AuditLog: счётчики ----------
 def test_count_by_level_includes_all_levels():
     log = AuditLog(now_provider=NOW)
     log.info("a", "1")
@@ -763,7 +761,6 @@ def test_count_by_event_type():
     assert counts == {"tx_done": 2, "auth": 1}
 
 
-# ---------- AuditLog: файл ----------
 def test_writes_to_file(tmp_path):
     path = tmp_path / "audit.jsonl"
     log = AuditLog(log_file=path, now_provider=NOW)
@@ -792,9 +789,9 @@ def test_file_write_failure_does_not_raise(tmp_path, monkeypatch):
         raise OSError("Disk full")
 
     monkeypatch.setattr("pathlib.Path.open", failing_open)
-    # Не падает
+    
     entry = log.info("evt", "msg")
-    # В память запись попала
+    
     assert len(log) == 1
     assert entry.id in [e.id for e in log.get_entries()]
 
@@ -820,7 +817,7 @@ class FakeTx:
         self.to_account_id = to_id
 
 
-# ---------- Заглушка Bank ----------
+
 class FakeAccount:
     def __init__(self, created_at):
         self.created_at = created_at
@@ -891,12 +888,12 @@ def test_unknown_currency_skips_large_amount(analyzer):
     assert not any("large amount" in r for r in event.reasons)
 
 
-# ---------- Правило 2: частые операции ----------
+
 def test_frequent_operations_flagged(bank):
     audit = AuditLog(now_provider=NOW)
     analyzer = RiskAnalyzer(bank=bank, audit_log=audit, now_provider=NOW)
 
-    # 5 завершённых операций за последние 10 минут
+
     for _ in range(5):
         audit.info("transaction_completed", "done", client_id="c1")
 
@@ -968,7 +965,7 @@ def test_missing_to_account_skips_rule(bank):
     assert not any("new account" in r for r in event.reasons)
 
 
-# ---------- Правило 4: ночь ----------
+
 def test_night_operation_flagged(bank):
     night_now = lambda: datetime(2024, 1, 1, 3, 0)
     analyzer = RiskAnalyzer(bank=bank, now_provider=night_now)
@@ -1103,7 +1100,7 @@ def reporter(audit):
     return AuditReporter(audit_log=audit, bank=FakeBank())
 
 
-# ---------- report_suspicious_operations ----------
+
 def test_suspicious_empty(audit, reporter):
     result = reporter.report_suspicious_operations()
     assert result["total_alerts"] == 0
@@ -1149,7 +1146,6 @@ def test_suspicious_respects_since(audit, reporter):
     assert result["total_alerts"] == 1
 
 
-# ---------- report_client_risk_profile ----------
 def test_profile_unknown_client(reporter):
     with pytest.raises(ClientNotFoundError):
         reporter.report_client_risk_profile("unknown")
@@ -1184,7 +1180,6 @@ def test_profile_empty_for_new_client(audit, reporter):
     assert result["last_activity"] is None
 
 
-# ---------- report_error_statistics ----------
 def test_errors_empty(audit, reporter):
     result = reporter.report_error_statistics()
     assert result["total_errors"] == 0
