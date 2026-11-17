@@ -347,13 +347,32 @@ class Bank():
             bank=self,
         )
 
-    def analyze_transaction_risk(self, tx) -> RiskEvent:
-        """Анализ риска + аудит + блокировка при HIGH.
+    def analyze_transaction_risk(self, tx) -> "RiskEvent":
 
-        Вызывается из TransactionProcessor перед _dispatch.
-        Raises: SuspiciousTransactionError при HIGH.
-        """
-        # Фикс 3: client_id берём из индекса account_owners
+        client_id = (
+        self.account_owners.get(tx.from_account_id)
+        or self.account_owners.get(tx.to_account_id)
+     )
+        event = self.risk_analyzer.analyze_transaction(tx, client_id=client_id)
+
+        if event.level is RiskLevel.MEDIUM:
+            self.audit_log.warning(
+            "risk_alert", f"Medium risk: {event.reasons}",
+            transaction_id=tx.id, client_id=client_id,
+            risk_level="medium", reasons=event.reasons,
+        )
+        if event.level is RiskLevel.HIGH:
+            self.audit_log.critical(
+            "risk_blocked", f"High risk blocked: {event.reasons}",
+            transaction_id=tx.id, client_id=client_id,
+            risk_level="high", reasons=event.reasons,
+        )
+            raise SuspiciousTransactionError(f"Blocked: {event.reasons}")
+        return event
+
+    def analyze_transaction(self, tx, client_id: str | None = None) -> RiskEvent:
+
+       
         client_id = (
             self.account_owners.get(tx.from_account_id)
             or self.account_owners.get(tx.to_account_id)
@@ -361,7 +380,7 @@ class Bank():
 
         event = self.risk_analyzer.analyze_transaction(tx, client_id=client_id)
 
-        # Фикс 4: risk_level и reasons идут в **metadata плоско
+        
         if event.level is RiskLevel.MEDIUM:
             self.audit_log.warning(
                 "risk_alert",
@@ -482,7 +501,6 @@ class Bank():
             )
 
         account_cls = self.ACCOUNT_TYPES[account_type]
-        # Фикс 7: прокидываем now_provider в счёт
         kwargs.setdefault("now_provider", self._now)
         account = account_cls(owner=client.full_name, **kwargs)
 
@@ -491,7 +509,6 @@ class Bank():
         client.link_account(account.account_id)
         client.log_activity(f"Opened account {account.account_id} ({account_type})")
 
-        # Фикс 1: account_type вместо type
         self.audit_log.info(
             "account_opened",
             f"Opened {account_type} account {account.account_id} for {client_id}",
@@ -909,13 +926,13 @@ class TransactionProcessor:
 
         try:
             if self.risk_check:
-                self.bank.analyze_transaction_risk(tx)   # HIGH → SuspiciousTransactionError
+                self.bank.analyze_transaction_risk(tx)   
 
             self._dispatch(tx)
             tx.mark_completed()
             self.log.info(f"Tx completed: {tx.id}")
 
-        # Audit: обязателен для _check_frequency и отчётов
+        
             self.bank.audit_log.info(
                 "transaction_completed",
                 f"Tx {tx.id} completed",
@@ -923,6 +940,7 @@ class TransactionProcessor:
                 client_id=client_id,
                 amount=tx.amount,
                 currency=tx.currency,
+                tx_type=tx.type,
                 )
             return True
         except Exception as exc:
@@ -930,6 +948,7 @@ class TransactionProcessor:
 
 
     def _handle_error(self, tx: "Transaction", exc: Exception, client_id: str | None) -> bool:
+
         tx.attempts += 1
         reason = self._humanize(exc)
         code = self._code_of(exc)
@@ -957,6 +976,7 @@ class TransactionProcessor:
                 client_id=client_id,
                 failure_code=tx.failure_code,            
                 reason=tx.failure_reason,
+                tx_type=tx.type,
             )   
             self.queue.move_to_failed(tx)
             self.log.error(f"Tx failed: {tx.id} | {type(exc).__name__}: {exc}")

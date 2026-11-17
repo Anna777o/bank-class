@@ -1,0 +1,166 @@
+{
+  "report_type": "client",
+  "generated_at": "2024-01-01T12:00:00",
+  "client": {
+    "client_id": "25e6edc0",
+    "full_name": "Анна Смирнова",
+    "status": "active",
+    "contacts": {
+      "phone": "+7-000"
+    },
+    "suspicious": false
+  },
+  "accounts": [
+    {
+      "account_id": "7fb8c96a-d79c-42f6-a6a1-cdad566bb87b",
+      "type": "BankAccount",
+      "currency": "RUB",
+      "balance": 836985.0,
+      "status": "active",
+      "created_at": "2023-01-01T00:00:00"
+    },
+    {
+      "account_id": "976c8a42-3178-4623-8cf8-631eca60f4de",
+      "type": "SavingsAccount",
+      "currency": "RUB",
+      "balance": 100500,
+      "status": "active",
+      "created_at": "2024-01-01T12:00:00"
+    },
+    {
+      "account_id": "b8992e22-b90e-4267-aaab-99fa2e6e0719",
+      "type": "BankAccount",
+      "currency": "USD",
+      "balance": 4900.0,
+      "status": "active",
+      "created_at": "2024-01-01T12:00:00"
+    },
+    {
+      "account_id": "06d438de-1935-48bd-8387-eb811f52b586",
+      "type": "PremiumAccount",
+      "currency": "RUB",
+      "balance": 0.0,
+      "status": "active",
+      "created_at": "2026-11-18T01:33:14.213534"
+    }
+  ],
+  "total_balance_by_currency": {
+    "RUB": 937485.0,
+    "USD": 4900.0
+  },
+  "transactions": {
+    "total": 21,
+    "completed": 13,
+    "failed": 6,
+    "risk_blocked": 2,
+    "retried": 2,
+    "by_type": {
+      "transfer": 19
+    },
+    "recent": [
+      {
+        "timestamp": "2024-01-02T03:00:00",
+        "level": "ERROR",
+        "event_type": "transaction_failed",
+        "message": "Transaction tx26 failed",
+        "tx_id": "tx26"
+      },
+      {
+        "timestamp": "2024-01-02T03:00:00",
+        "level": "CRITICAL",
+        "event_type": "risk_blocked",
+        "message": "High risk blocked: ['large amount: 300000 > 100000 RUB', 'new account: opened 0 days ago (limit 30)', 'night operation at 03:00']",
+        "tx_id": "tx26"
+      },
+      {
+        "timestamp": "2024-01-02T03:00:00",
+        "level": "INFO",
+        "event_type": "transaction_completed",
+        "message": "Tx tx29 completed",
+        "tx_id": "tx29"
+      },
+      {
+        "timestamp": "2024-01-02T03:00:00",
+        "level": "WARNING",
+        "event_type": "risk_alert",
+        "message": "Medium risk: ['night operation at 03:00']",
+        "tx_id": "tx29"
+      },
+      {
+        "timestamp": "2024-01-01T23:00:00",
+        "level": "INFO",
+        "event_type": "transaction_completed",
+        "message": "Tx tx25 completed",
+        "tx_id": "tx25"
+      },
+      {
+        "timestamp": "2024-01-01T23:00:00",
+        "level": "WARNING",
+        "event_type": "risk_alert",
+        "message": "Medium risk: ['new account: opened 0 days ago (limit 30)', 'night operation at 23:00']",
+        "tx_id": "tx25"
+      },
+      {
+        "timestamp": "2024-01-01T12:00:00",
+        "level": "ERROR",
+        "event_type": "transaction_failed",
+        "message": "Transaction tx33 failed",
+        "tx_id": "tx33"
+      },
+      {
+        "timestamp": "2024-01-01T12:00:00",
+        "level": "WARNING",
+        "event_type": "risk_alert",
+        "message": "Medium risk: ['frequent: 11 ops in 10 min (limit 5)', 'new account: opened 0 days ago (limit 30)']",
+        "tx_id": "tx33"
+      },
+      {
+        "timestamp": "2024-01-01T12:00:00",
+        "level": "WARNING",
+        "event_type": "transaction_retry",
+        "message": "Retry 2/3: tx33",
+        "tx_id": "tx33"
+      },
+      {
+        "timestamp": "2024-01-01T12:00:00",
+        "level": "WARNING",
+        "event_type": "risk_alert",
+        "message": "Medium risk: ['frequent: 11 ops in 10 min (limit 5)', 'new account: opened 0 days ago (limit 30)']",
+        "tx_id": "tx33"
+      }
+    ]
+  },
+  "risk_profile": {
+    "client_id": "25e6edc0",
+    "client_name": "Анна Смирнова",
+    "risk_distribution": {
+      "low": 0,
+      "medium": 15,
+      "high": 2
+    },
+    "blocked_count": 2,
+    "top_reasons": [
+      {
+        "reason": "new account: opened 0 days ago (limit 30)",
+        "count": 10
+      },
+      {
+        "reason": "frequent: 11 ops in 10 min (limit 5)",
+        "count": 6
+      },
+      {
+        "reason": "large amount: 150000 > 100000 RUB",
+        "count": 2
+      },
+      {
+        "reason": "large amount: 200000 > 100000 RUB",
+        "count": 2
+      },
+      {
+        "reason": "large amount: 300000 > 100000 RUB",
+        "count": 2
+      }
+    ],
+    "last_activity": "2024-01-02T03:00:00"
+  }
+}

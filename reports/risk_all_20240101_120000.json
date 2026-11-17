@@ -1,0 +1,381 @@
+{
+  "report_type": "risk",
+  "generated_at": "2024-01-01T12:00:00",
+  "period": {
+    "since": null
+  },
+  "summary": {
+    "total_alerts": 26,
+    "total_blocked": 2,
+    "affected_clients": 5
+  },
+  "by_client": {
+    "25e6edc0": {
+      "client_name": "Анна Смирнова",
+      "alerts": [
+        {
+          "tx_id": "tx03",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx16",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 150000 > 100000 RUB",
+            "frequent: 5 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx17",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 200000 > 100000 RUB",
+            "frequent: 6 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx21",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 7 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx22",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 8 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx24",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 300000 > 100000 RUB",
+            "frequent: 9 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx30",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 500000 > 100000 RUB",
+            "frequent: 10 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx32",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 200000 > 100000 RUB",
+            "frequent: 11 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx33",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx34",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx36",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx33",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx33",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx25",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)",
+            "night operation at 23:00"
+          ],
+          "timestamp": "2024-01-01T23:00:00"
+        },
+        {
+          "tx_id": "tx29",
+          "risk_level": "medium",
+          "reasons": [
+            "night operation at 03:00"
+          ],
+          "timestamp": "2024-01-02T03:00:00"
+        }
+      ],
+      "blocked": [
+        {
+          "tx_id": "tx23",
+          "risk_level": "high",
+          "reasons": [
+            "large amount: 150000 > 100000 RUB",
+            "frequent: 9 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx26",
+          "risk_level": "high",
+          "reasons": [
+            "large amount: 300000 > 100000 RUB",
+            "new account: opened 0 days ago (limit 30)",
+            "night operation at 03:00"
+          ],
+          "timestamp": "2024-01-02T03:00:00"
+        }
+      ],
+      "risk_level_counts": {
+        "medium": 15,
+        "high": 2
+      }
+    },
+    "1b0facfc": {
+      "client_name": "Елена Фёдорова",
+      "alerts": [
+        {
+          "tx_id": "tx07",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      ],
+      "blocked": [],
+      "risk_level_counts": {
+        "medium": 1
+      }
+    },
+    "9e176d4f": {
+      "client_name": "Мария Смирнова",
+      "alerts": [
+        {
+          "tx_id": "tx19",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 5 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx20",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 6 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx31",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 7 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx35",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 7 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      ],
+      "blocked": [],
+      "risk_level_counts": {
+        "medium": 4
+      }
+    },
+    "4332c6d5": {
+      "client_name": "Олег Петров",
+      "alerts": [
+        {
+          "tx_id": "tx27",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx40",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx40",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx40",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      ],
+      "blocked": [],
+      "risk_level_counts": {
+        "medium": 4
+      }
+    },
+    "34ba501d": {
+      "client_name": "Дмитрий Иванов",
+      "alerts": [
+        {
+          "tx_id": "tx28",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx38",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 5000 > 1000 EUR"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      ],
+      "blocked": [],
+      "risk_level_counts": {
+        "medium": 2
+      }
+    }
+  },
+  "top_reasons": [
+    {
+      "reason": "new account: opened 0 days ago (limit 30)",
+      "count": 16
+    },
+    {
+      "reason": "frequent: 11 ops in 10 min (limit 5)",
+      "count": 6
+    },
+    {
+      "reason": "frequent: 7 ops in 10 min (limit 5)",
+      "count": 3
+    },
+    {
+      "reason": "large amount: 150000 > 100000 RUB",
+      "count": 2
+    },
+    {
+      "reason": "frequent: 5 ops in 10 min (limit 5)",
+      "count": 2
+    },
+    {
+      "reason": "large amount: 200000 > 100000 RUB",
+      "count": 2
+    },
+    {
+      "reason": "frequent: 6 ops in 10 min (limit 5)",
+      "count": 2
+    },
+    {
+      "reason": "large amount: 300000 > 100000 RUB",
+      "count": 2
+    },
+    {
+      "reason": "frequent: 9 ops in 10 min (limit 5)",
+      "count": 2
+    },
+    {
+      "reason": "night operation at 03:00",
+      "count": 2
+    }
+  ],
+  "blocked_transactions": [
+    {
+      "tx_id": "tx23",
+      "client_id": "25e6edc0",
+      "reasons": [
+        "large amount: 150000 > 100000 RUB",
+        "frequent: 9 ops in 10 min (limit 5)",
+        "new account: opened 0 days ago (limit 30)"
+      ],
+      "timestamp": "2024-01-01T12:00:00"
+    },
+    {
+      "tx_id": "tx26",
+      "client_id": "25e6edc0",
+      "reasons": [
+        "large amount: 300000 > 100000 RUB",
+        "new account: opened 0 days ago (limit 30)",
+        "night operation at 03:00"
+      ],
+      "timestamp": "2024-01-02T03:00:00"
+    }
+  ],
+  "thresholds": {
+    "large_amount": {
+      "RUB": 100000,
+      "USD": 1000,
+      "EUR": 1000,
+      "KZT": 500000,
+      "CNY": 7000
+    },
+    "frequency_window_minutes": 10,
+    "frequency_max_operations": 5,
+    "night_hours": [
+      22,
+      6
+    ],
+    "new_account_days": 30
+  }
+}

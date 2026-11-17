@@ -4,6 +4,7 @@ from utils import (
     RestrictedTimeError, AccountNotFoundError, ClientNotAdultError, AccountClosedError,
     AccountFrozenError, InvalidOperationError, InsufficientFundsError, validate_amount
 )
+from reports import ChartType, ReportBuilder, ReportFormat, ReportType
 from collections import defaultdict, Counter
 from currency_converter import CurrencyConverter
 import json
@@ -313,9 +314,9 @@ def _build_transactions(bank, accounts) -> list[Transaction]:
     return txs
 
 def _simulate(processor, queue, txs, now) -> None:
-    """Стадии: попадание в очередь → исполнение → отклонение."""
+    
 
-    # --- Стадия 1: попадание в очередь ---
+    
     subsection("Стадия 1. Попадание в очередь")
     for tx in txs:
         queue.enqueue(tx)
@@ -326,7 +327,7 @@ def _simulate(processor, queue, txs, now) -> None:
     for tx in scheduled:
         print(f"    {tx.id} → запланирована на {tx.scheduled_at}")
 
-    # --- Стадия 2: исполнение ---
+    
     subsection("Стадия 2. Исполнение (поэтапно)")
 
     phases = [
@@ -343,7 +344,7 @@ def _simulate(processor, queue, txs, now) -> None:
             if tx is None:
                 break
             processor._process_transaction(tx)
-            # короткая строка результата
+            
             tail = f" — {tx.failure_code}" if tx.failure_code else ""
             print(f"    {tx.id:6s} {tx.type:8s} {tx.amount:>10.2f} "
                   f"{tx.currency:3s} | {tx.status:9s}{tail}")
@@ -351,10 +352,10 @@ def _simulate(processor, queue, txs, now) -> None:
         if n == 0:
             print("    (нет готовых к обработке)")
 
-    # Вернуть «сейчас» обратно — для отчётов и проверок
+    
     now[0] = datetime(2024, 1, 1, 12, 0)
 
-    # --- Стадия 3: отклонение ---
+ 
     subsection("Стадия 3. Отклонение")
 
     print(f"\n  Dead-letter (queue.failed): {len(queue.failed)}")
@@ -381,13 +382,11 @@ def _simulate(processor, queue, txs, now) -> None:
                   f"attempt={e.metadata.get('attempt')}")
 
 
-# ============================================================
-# Фаза 6. Пользовательские сценарии
-# ============================================================
+
 def _show_user_scenarios(bank, audit_log, client: Client) -> None:
     section(f"ПОЛЬЗОВАТЕЛЬСКИЙ СЦЕНАРИЙ: {client.full_name}")
 
-    # 1. Счета
+   
     subsection("Счета")
     if not client.account_ids:
         print("  (нет открытых счетов)")
@@ -407,7 +406,7 @@ def _show_user_scenarios(bank, audit_log, client: Client) -> None:
         print(f"\n  Суммарный баланс: {bank.get_total_balance(client.client_id):.2f} "
               f"(в валютах счетов)")
 
-    # 2. История
+   
     subsection("История (audit_log, последние 10)")
     entries = audit_log.get_entries(client_id=client.client_id, limit=10, reverse=True)
     if not entries:
@@ -423,7 +422,7 @@ def _show_user_scenarios(bank, audit_log, client: Client) -> None:
         for line in client.activity_log[-10:]:
             print(f"  {line}")
 
-    # 3. Подозрительные операции
+    
     subsection("Риск-профиль")
     try:
         profile = bank.report_client_risk_profile(client.client_id)
@@ -432,9 +431,6 @@ def _show_user_scenarios(bank, audit_log, client: Client) -> None:
         print(f"  [WARN] {type(exc).__name__}: {exc}")
 
 
-# ============================================================
-# Фаза 7. Отчёты
-# ============================================================
 def _balance_by_currency(bank) -> dict[str, dict]:
     """Сгруппировать балансы по валютам: {RUB: {total, count}, ...}."""
     result: dict[str, dict] = defaultdict(lambda: {"total": 0.0, "count": 0})
@@ -449,7 +445,7 @@ def _balance_by_currency(bank) -> dict[str, dict]:
 def _show_reports(bank, txs, queue) -> None:
     section("ОТЧЁТЫ")
 
-    # --- 1. Топ-3 клиентов ---
+    
     subsection("Топ-3 клиентов по суммарному балансу (мультивалютный)")
     ranking = bank.get_clients_ranking()
     # Берём всех, но выводим по-валютно для честности
@@ -462,7 +458,7 @@ def _show_reports(bank, txs, queue) -> None:
         breakdown = ", ".join(f"{v:.2f} {c}" for c, v in sorted(per_currency.items()))
         print(f"  {i}. {client.full_name:25s} — {breakdown or '—'}")
 
-    # --- 2. Статистика транзакций ---
+    
     subsection("Статистика транзакций")
     completed = [tx for tx in txs if tx.status == "completed"]
     failed = [tx for tx in txs if tx.status == "failed"]
@@ -492,7 +488,7 @@ def _show_reports(bank, txs, queue) -> None:
 
     print(f"  Dead-letter:   {len(queue.failed)} (должно совпадать с отклонёнными)")
 
-    # --- 3. Общий баланс (по валютам) ---
+  
     subsection("Общий баланс банка (по валютам)")
     by_ccy = _balance_by_currency(bank)
     for ccy in sorted(by_ccy):
@@ -507,9 +503,6 @@ def _show_reports(bank, txs, queue) -> None:
     print(json.dumps(bank.report_error_statistics(), indent=2, ensure_ascii=False))
 
 
-# ============================================================
-# Фаза 8. Self-checks
-# ============================================================
 def _run_self_checks(bank, queue, audit_log, txs, accounts) -> None:
     section("SELF-CHECKS (инварианты)")
 
@@ -529,7 +522,7 @@ def _run_self_checks(bank, queue, audit_log, txs, accounts) -> None:
     check("В очереди не осталось 'зависших' транзакций",
           len(in_flight) == 0, f"in_flight={len(in_flight)}")
 
-    check("AuditLog содержит >= 100 записей",
+    check("AuditLog содержит >= 90 записей",
           len(audit_log) >= 90, f"получено {len(audit_log)}")
 
     check("Есть >= 2 CRITICAL (риск-блокировки)",
@@ -550,23 +543,23 @@ def _run_self_checks(bank, queue, audit_log, txs, accounts) -> None:
           all(tx.failure_code for tx in failed),
           f"без кода: {[tx.id for tx in failed if not tx.failure_code]}")
 
-    # audit sync: count_by_event_type["transaction_completed"] == len(completed)
+    
     completed_events = audit_log.count_by_event_type().get("transaction_completed", 0)
     check("Audit: transaction_completed == completed",
           completed_events == len(completed),
           f"audit={completed_events} txs={len(completed)}")
 
-    # Замороженный счёт не тронут
+   
     check("Замороженный счёт irina_frozen не изменился",
           accounts["irina_frozen"].balance == 500,
           f"balance={accounts['irina_frozen'].balance}")
 
-    # Закрытый счёт не тронут
+    
     check("Закрытый счёт irina_block не изменился",
           accounts["irina_block"].balance == 0,
           f"balance={accounts['irina_block'].balance}")
 
-    # maria_new: сюда шли только blocked/insufficient → не должен быть отрицательным
+   
     check("maria_new баланс не отрицательный",
           accounts["maria_new"].balance >= 0,
           f"balance={accounts['maria_new'].balance}")
@@ -575,9 +568,51 @@ def _run_self_checks(bank, queue, audit_log, txs, accounts) -> None:
     assert all(checks), f"Провалено {len(checks) - sum(checks)} инвариантов"
 
 
-# ============================================================
-# Точка входа
-# ============================================================
+def _demo_reports(infra: dict, clients: dict, txs: list) -> None:
+
+
+    section("10. ОТЧЁТЫ (ReportBuilder)")
+
+    builder = ReportBuilder(
+        bank=infra["bank"],
+        audit_log=infra["audit_log"],
+        output_dir="reports",
+        now_provider=infra["now_provider"],
+    )
+
+    # 1. Текст — выводим в консоль
+    print(builder.render_text(ReportType.BANK))
+    print()
+    print(builder.render_text(ReportType.RISK))
+    print()
+
+    anna_result = builder.build_report(
+        ReportType.CLIENT,
+        client_id=clients["anna"].client_id,
+        formats=[ReportFormat.TEXT, ReportFormat.JSON, ReportFormat.CSV],
+        charts=[ChartType.PIE, ChartType.BAR, ChartType.BALANCE_FLOW],
+        transactions=txs,
+    )
+    print(f"\n  Анна: {anna_result['text'][:300]}...")
+    print(f"\n  Файлы Анны:")
+    for p in anna_result["files"]:
+        print(f"    📄 {p}")
+    for p in anna_result["charts"]:
+        print(f"    📊 {p}")
+
+    for rtype in (ReportType.BANK, ReportType.RISK):
+        res = builder.build_report(
+            rtype,
+            formats=[ReportFormat.JSON, ReportFormat.CSV],
+            charts=[ChartType.PIE, ChartType.BAR],
+        )
+        print(f"\n  {rtype.value}:")
+        for p in res["files"]:
+            print(f"    📄 {p}")
+        for p in res["charts"]:
+            print(f"    📊 {p}")
+
+
 def run_full_scenario() -> None:
     section("1. ИНИЦИАЛИЗАЦИЯ")
     infra = _create_infrastructure()
@@ -628,8 +663,12 @@ def run_full_scenario() -> None:
     print("  ✅ СЦЕНАРИЙ ЗАВЕРШЁН УСПЕШНО")
     print("=" * 72)
 
+    _demo_reports(infra, clients, txs)
 
-# Если запускается напрямую (python src/scenario.py)
+    print("\n" + "=" * 72)
+    print("  ✅ СЦЕНАРИЙ ЗАВЕРШЁН УСПЕШНО")
+    print("=" * 72)
+
 if __name__ == "__main__":
     run_full_scenario()
         

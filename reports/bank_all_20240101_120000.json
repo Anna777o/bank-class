@@ -1,0 +1,106 @@
+{
+  "report_type": "bank",
+  "generated_at": "2024-01-01T12:00:00",
+  "summary": {
+    "total_clients": 7,
+    "total_accounts": 16,
+    "active_accounts": 14,
+    "frozen_accounts": 1,
+    "closed_accounts": 1
+  },
+  "balances_by_currency": {
+    "EUR": {
+      "total": 2900.0,
+      "count": 1
+    },
+    "RUB": {
+      "total": 2688820.0,
+      "count": 13
+    },
+    "USD": {
+      "total": 4900.0,
+      "count": 1
+    }
+  },
+  "transaction_stats": {
+    "total": 40,
+    "completed": 29,
+    "failed": 11,
+    "cancelled": 0,
+    "retries": 4,
+    "by_type": {
+      "transfer": 34,
+      "deposit": 3,
+      "withdraw": 3
+    },
+    "by_failure_code": {
+      "risk_blocked": 2,
+      "insufficient_funds": 6,
+      "account_closed": 1,
+      "account_frozen": 2
+    }
+  },
+  "top_clients": [
+    {
+      "client_id": "4332c6d5",
+      "full_name": "Олег Петров",
+      "accounts_count": 2,
+      "total_by_currency": {
+        "RUB": 1683890.0
+      }
+    },
+    {
+      "client_id": "25e6edc0",
+      "full_name": "Анна Смирнова",
+      "accounts_count": 4,
+      "total_by_currency": {
+        "RUB": 937485.0,
+        "USD": 4900.0
+      }
+    },
+    {
+      "client_id": "9e176d4f",
+      "full_name": "Мария Смирнова",
+      "accounts_count": 3,
+      "total_by_currency": {
+        "RUB": 45650.0
+      }
+    },
+    {
+      "client_id": "34ba501d",
+      "full_name": "Дмитрий Иванов",
+      "accounts_count": 2,
+      "total_by_currency": {
+        "EUR": 2900.0,
+        "RUB": 19395.0
+      }
+    },
+    {
+      "client_id": "1b0facfc",
+      "full_name": "Елена Фёдорова",
+      "accounts_count": 1,
+      "total_by_currency": {
+        "RUB": 2000.0
+      }
+    }
+  ],
+  "audit_stats": {
+    "total_entries": 90,
+    "by_level": {
+      "INFO": 46,
+      "WARNING": 31,
+      "ERROR": 11,
+      "CRITICAL": 2
+    },
+    "by_event_type": {
+      "account_opened": 16,
+      "account_frozen": 1,
+      "account_closed": 1,
+      "transaction_completed": 29,
+      "risk_alert": 26,
+      "risk_blocked": 2,
+      "transaction_failed": 11,
+      "transaction_retry": 4
+    }
+  }
+}

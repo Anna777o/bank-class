@@ -1,0 +1,730 @@
+Tx failed: tx23 | SuspiciousTransactionError: Blocked: ['large amount: 150000 > 100000 RUB', 'frequent: 9 ops in 10 min (limit 5)', 'new account: opened 0 days ago (limit 30)']
+Tx failed: tx31 | InsufficientFundsError: Balance is lower than amount, unable to have a transaction
+Tx failed: tx32 | InsufficientFundsError: Balance is lower than amount, unable to have a transaction
+Tx retry 1/3: tx33 — Account is frozen.
+Tx failed: tx34 | AccountClosedError: Account is closed.
+Tx failed: tx36 | InsufficientFundsError: Exedded overdraft limit: needed 2000.00, available 1000.00 RUB
+Tx failed: tx37 | InsufficientFundsError: Balance is lower than amount, unable to have a transaction
+Tx failed: tx38 | InsufficientFundsError: Balance is lower than amount, unable to have a transaction
+Tx failed: tx39 | InsufficientFundsError: Balance is lower than amount, unable to have a transaction
+Tx retry 1/3: tx40 — Account is frozen.
+Tx retry 2/3: tx33 — Account is frozen.
+Tx retry 2/3: tx40 — Account is frozen.
+Tx failed: tx33 | AccountFrozenError: Account is frozen.
+Tx failed: tx40 | AccountFrozenError: Account is frozen.
+Tx failed: tx26 | SuspiciousTransactionError: Blocked: ['large amount: 300000 > 100000 RUB', 'new account: opened 0 days ago (limit 30)', 'night operation at 03:00']
+
+========================================================================
+  1. ИНИЦИАЛИЗАЦИЯ
+========================================================================
+{'large_amount': {'RUB': 100000, 'USD': 1000, 'EUR': 1000, 'KZT': 500000, 'CNY': 7000}, 'frequency_window_minutes': 10, 'frequency_max_operations': 5, 'night_hours': (22, 6), 'new_account_days': 30}
+  Bank:      Bank(clients=0, accounts=0, audit_entries=0)
+  AuditLog:  entries=0
+  Риск-пороги: {'large_amount': {'RUB': 100000, 'USD': 1000, 'EUR': 1000, 'KZT': 500000, 'CNY': 7000}, 'frequency_window_minutes': 10, 'frequency_max_operations': 5, 'night_hours': (22, 6), 'new_account_days': 30}
+
+========================================================================
+  2. КЛИЕНТЫ
+========================================================================
+  + Client b8d8e6ce | Анна Смирнова | Status: ACTIVE | Accounts: 0 | Suspicious: no
+  + Client 85c7bd01 | Олег Петров | Status: ACTIVE | Accounts: 0 | Suspicious: no
+  + Client 025e76db | Мария Смирнова | Status: ACTIVE | Accounts: 0 | Suspicious: no
+  + Client c8778609 | Дмитрий Иванов | Status: ACTIVE | Accounts: 0 | Suspicious: no
+  + Client 36937b00 | Елена Фёдорова | Status: ACTIVE | Accounts: 0 | Suspicious: no
+  + Client 5e428146 | Сергей Александров | Status: ACTIVE | Accounts: 0 | Suspicious: no
+  + Client 8805943e | Ирина Михайлова | Status: ACTIVE | Accounts: 0 | Suspicious: no
+  [EXPECTED] ClientNotAdultError: Client should be not younger than 18. Current age: 11
+
+========================================================================
+  3. СЧЕТА
+========================================================================
+  anna_main     : Тип: BankAccount | Клиент: Анна Смирнова | Счет: ***bb86 | Статус: ACTIVE | Баланс: 2000000 RUB
+  anna_savings  : Тип: SavingsAccount | Клиент: Анна Смирнова | Счет: ***2dc8 | Статус: ACTIVE | Баланс: 100000 RUB | Min Balance: 1000 RUB | Interest Rate: 5.00% [NEW]
+  anna_usd      : Тип: BankAccount | Клиент: Анна Смирнова | Счет: ***1886 | Статус: ACTIVE | Баланс: 5000 USD [NEW]
+  anna_premium  : Тип: PremiumAccount | Клиент: Анна Смирнова | Счет: ***d058 | Статус: ACTIVE | Баланс: 500 RUB | Overdraft Limit: 1000 RUB | Commission: 10 RUB [NEW]
+  oleg_main     : Тип: BankAccount | Клиент: Олег Петров | Счет: ***a83a | Статус: ACTIVE | Баланс: 5000 RUB
+  oleg_savings  : Тип: SavingsAccount | Клиент: Олег Петров | Счет: ***0a69 | Статус: ACTIVE | Баланс: 500000 RUB | Min Balance: 5000 RUB | Interest Rate: 1.00% [NEW]
+  maria_main    : Тип: BankAccount | Клиент: Мария Смирнова | Счет: ***ceaf | Статус: ACTIVE | Баланс: 50 RUB
+  maria_new     : Тип: BankAccount | Клиент: Мария Смирнова | Счет: ***cd82 | Статус: ACTIVE | Баланс: 0 RUB [NEW]
+  maria_new_2   : Тип: BankAccount | Клиент: Мария Смирнова | Счет: ***e42f | Статус: ACTIVE | Баланс: 0 RUB [NEW]
+  dmitry_eur    : Тип: BankAccount | Клиент: Дмитрий Иванов | Счет: ***d493 | Статус: ACTIVE | Баланс: 3000 EUR [NEW]
+  dmitry_main   : Тип: BankAccount | Клиент: Дмитрий Иванов | Счет: ***58d8 | Статус: ACTIVE | Баланс: 20000 RUB [NEW]
+  elena_main    : Тип: BankAccount | Клиент: Елена Фёдорова | Счет: ***7e49 | Статус: ACTIVE | Баланс: 1000 RUB [NEW]
+  sergey_main   : Тип: BankAccount | Клиент: Сергей Александров | Счет: ***f6de | Статус: ACTIVE | Баланс: 500 RUB [NEW]
+  irina_premium : Тип: PremiumAccount | Клиент: Ирина Михайлова | Счет: ***be21 | Статус: ACTIVE | Баланс: 200 RUB | Overdraft Limit: 1000 RUB | Commission: 10 RUB [NEW]
+  irina_frozen  : Тип: BankAccount | Клиент: Ирина Михайлова | Счет: ***2d8b | Статус: FROZEN | Баланс: 500 RUB [FROZEN]
+  irina_block   : Тип: BankAccount | Клиент: Ирина Михайлова | Счет: ***bc84 | Статус: CLOSED | Баланс: 0 RUB [CLOSED]
+
+========================================================================
+  4. ТРАНЗАКЦИИ — ПОДГОТОВКА (40 шт.)
+========================================================================
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=100 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=100 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=300 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=800 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=50000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=150000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=200000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=150000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=300000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=300000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=100 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=100 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=100000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=200000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=100 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=2000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=5000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=5000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=1000 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+DEBUG | amount=500 | type=<class 'int'> | int=<class 'int'> | float=<class 'float'> | isinstance=True
+  Создано транзакций: 40
+    transfer: 34
+    deposit:  3
+    withdraw: 3
+  Отложенных (scheduled_at в будущем): 3
+
+========================================================================
+  5. СИМУЛЯЦИЯ
+========================================================================
+
+  --- Стадия 1. Попадание в очередь ---
+  Всего в очереди:       37
+  Отложенных (scheduled): 3
+    tx25 → запланирована на 2024-01-01 23:00:00
+    tx26 → запланирована на 2024-01-02 03:00:00
+    tx29 → запланирована на 2024-01-01 23:30:00
+
+  --- Стадия 2. Исполнение (поэтапно) ---
+
+  [Время: 2024-01-01 12:00]
+    tx01   transfer    1000.00 RUB | completed
+    tx02   transfer     500.00 RUB | completed
+    tx03   transfer     500.00 RUB | completed
+    tx04   transfer     100.00 USD | completed
+    tx05   transfer     100.00 EUR | completed
+    tx06   deposit      500.00 RUB | completed
+    tx07   deposit     1000.00 RUB | completed
+    tx08   withdraw     300.00 RUB | completed
+    tx09   withdraw     500.00 RUB | completed
+    tx10   transfer     500.00 RUB | completed
+    tx11   transfer     800.00 RUB | completed
+    tx12   deposit    50000.00 RUB | completed
+    tx13   transfer    1000.00 RUB | completed
+    tx14   transfer    1000.00 RUB | completed
+    tx15   transfer    1000.00 RUB | completed
+    tx16   transfer  150000.00 RUB | completed
+    tx17   transfer  200000.00 RUB | completed
+    tx18   transfer    1000.00 RUB | completed
+    tx19   transfer    1000.00 RUB | completed
+    tx20   transfer    1000.00 RUB | completed
+    tx21   transfer     500.00 RUB | completed
+    tx22   transfer     500.00 RUB | completed
+    tx23   transfer  150000.00 RUB | failed    — risk_blocked
+    tx24   transfer  300000.00 RUB | completed
+    tx27   transfer     100.00 RUB | completed
+    tx28   transfer     100.00 RUB | completed
+    tx30   transfer  500000.00 RUB | completed
+    tx31   transfer  100000.00 RUB | failed    — insufficient_funds
+    tx32   transfer  200000.00 RUB | failed    — insufficient_funds
+    tx33   transfer     500.00 RUB | pending   — account_frozen
+    tx34   transfer     500.00 RUB | failed    — account_closed
+    tx35   withdraw     100.00 RUB | completed
+    tx36   transfer    2000.00 RUB | failed    — insufficient_funds
+    tx37   transfer    5000.00 RUB | failed    — insufficient_funds
+    tx38   transfer    5000.00 EUR | failed    — insufficient_funds
+    tx39   transfer    1000.00 RUB | failed    — insufficient_funds
+    tx40   transfer     500.00 RUB | pending   — account_frozen
+    tx33   transfer     500.00 RUB | pending   — account_frozen
+    tx40   transfer     500.00 RUB | pending   — account_frozen
+    tx33   transfer     500.00 RUB | failed    — account_frozen
+    tx40   transfer     500.00 RUB | failed    — account_frozen
+
+  [Время: 2024-01-01 23:00]
+    tx25   transfer     500.00 RUB | completed
+
+  [Время: 2024-01-02 03:00]
+    tx29   transfer    1000.00 RUB | completed
+    tx26   transfer  300000.00 RUB | failed    — risk_blocked
+
+  --- Стадия 3. Отклонение ---
+
+  Dead-letter (queue.failed): 11
+    tx23   transfer | risk_blocked         | attempts=1 | Blocked: ['large amount: 150000 > 100000 RUB', 'frequent: 9 ops in 10 min (limit 5)', 'new account: opened 0 days ago (limit 30)']
+    tx31   transfer | insufficient_funds   | attempts=1 | Balance is lower than amount, unable to have a transaction
+    tx32   transfer | insufficient_funds   | attempts=1 | Balance is lower than amount, unable to have a transaction
+    tx34   transfer | account_closed       | attempts=1 | Account is closed.
+    tx36   transfer | insufficient_funds   | attempts=1 | Exedded overdraft limit: needed 2000.00, available 1000.00 RUB
+    tx37   transfer | insufficient_funds   | attempts=1 | Balance is lower than amount, unable to have a transaction
+    tx38   transfer | insufficient_funds   | attempts=1 | Balance is lower than amount, unable to have a transaction
+    tx39   transfer | insufficient_funds   | attempts=1 | Balance is lower than amount, unable to have a transaction
+    tx33   transfer | account_frozen       | attempts=3 | Account is frozen.
+    tx40   transfer | account_frozen       | attempts=3 | Account is frozen.
+    tx26   transfer | risk_blocked         | attempts=1 | Blocked: ['large amount: 300000 > 100000 RUB', 'new account: opened 0 days ago (limit 30)', 'night operation at 03:00']
+
+  Audit ERROR (последние 15, новые первыми):
+    [03:00] transaction_failed: Transaction tx26 failed
+    [12:00] transaction_failed: Transaction tx40 failed
+    [12:00] transaction_failed: Transaction tx33 failed
+    [12:00] transaction_failed: Transaction tx39 failed
+    [12:00] transaction_failed: Transaction tx38 failed
+    [12:00] transaction_failed: Transaction tx37 failed
+    [12:00] transaction_failed: Transaction tx36 failed
+    [12:00] transaction_failed: Transaction tx34 failed
+    [12:00] transaction_failed: Transaction tx32 failed
+    [12:00] transaction_failed: Transaction tx31 failed
+    [12:00] transaction_failed: Transaction tx23 failed
+
+  Заблокировано по риску (CRITICAL):
+    [12:00] tx=tx23 reasons=['large amount: 150000 > 100000 RUB', 'frequent: 9 ops in 10 min (limit 5)', 'new account: opened 0 days ago (limit 30)']
+    [03:00] tx=tx26 reasons=['large amount: 300000 > 100000 RUB', 'new account: opened 0 days ago (limit 30)', 'night operation at 03:00']
+
+  Retry (WARNING):
+    всего попыток retry: 4
+      [12:00] tx=tx33 attempt=1
+      [12:00] tx=tx40 attempt=1
+      [12:00] tx=tx33 attempt=2
+      [12:00] tx=tx40 attempt=2
+
+========================================================================
+  6. ПОЛЬЗОВАТЕЛЬСКИЕ СЦЕНАРИИ
+========================================================================
+
+========================================================================
+  ПОЛЬЗОВАТЕЛЬСКИЙ СЦЕНАРИЙ: Анна Смирнова
+========================================================================
+
+  --- Счета ---
+  Тип: BankAccount | Клиент: Анна Смирнова | Счет: ***bb86 | Статус: ACTIVE | Баланс: 836985.0 RUB
+  Тип: SavingsAccount | Клиент: Анна Смирнова | Счет: ***2dc8 | Статус: ACTIVE | Баланс: 100500 RUB | Min Balance: 1000 RUB | Interest Rate: 5.00% [NEW]
+  Тип: BankAccount | Клиент: Анна Смирнова | Счет: ***1886 | Статус: ACTIVE | Баланс: 4900.0 USD [NEW]
+  Тип: PremiumAccount | Клиент: Анна Смирнова | Счет: ***d058 | Статус: ACTIVE | Баланс: 0.0 RUB | Overdraft Limit: 1000 RUB | Commission: 10 RUB [NEW]
+
+  Суммарный баланс: 942385.00 (в валютах счетов)
+
+  --- История (audit_log, последние 10) ---
+  [03:00] ERROR    transaction_failed: Transaction tx26 failed
+  [03:00] CRITICAL risk_blocked: High risk blocked: ['large amount: 300000 > 100000 RUB', 'new account:
+  [03:00] INFO     transaction_completed: Tx tx29 completed
+  [03:00] WARNING  risk_alert: Medium risk: ['night operation at 03:00']
+  [23:00] INFO     transaction_completed: Tx tx25 completed
+  [23:00] WARNING  risk_alert: Medium risk: ['new account: opened 0 days ago (limit 30)', 'night oper
+  [12:00] ERROR    transaction_failed: Transaction tx33 failed
+  [12:00] WARNING  risk_alert: Medium risk: ['frequent: 11 ops in 10 min (limit 5)', 'new account: op
+  [12:00] WARNING  transaction_retry: Retry 2/3: tx33
+  [12:00] WARNING  risk_alert: Medium risk: ['frequent: 11 ops in 10 min (limit 5)', 'new account: op
+
+  --- История (activity_log клиента) ---
+  [2026-11-18 01:07:50] Opened account 4e1c9f02-6a8b-4e1c-a927-7981807ebb86 (basic)
+  [2026-11-18 01:07:50] Opened account d10165e8-3bb6-4c50-8877-d39401fb2dc8 (savings)
+  [2026-11-18 01:07:50] Opened account 579c108d-9f18-4e71-a50b-e5a7092c1886 (basic)
+  [2026-11-18 01:07:50] Opened account a7be4c66-f993-47a7-b6b0-22d2f7d0d058 (premium)
+
+  --- Риск-профиль ---
+{
+  "client_id": "b8d8e6ce",
+  "client_name": "Анна Смирнова",
+  "risk_distribution": {
+    "low": 0,
+    "medium": 15,
+    "high": 2
+  },
+  "blocked_count": 2,
+  "top_reasons": [
+    {
+      "reason": "new account: opened 0 days ago (limit 30)",
+      "count": 10
+    },
+    {
+      "reason": "frequent: 11 ops in 10 min (limit 5)",
+      "count": 6
+    },
+    {
+      "reason": "large amount: 150000 > 100000 RUB",
+      "count": 2
+    },
+    {
+      "reason": "large amount: 200000 > 100000 RUB",
+      "count": 2
+    },
+    {
+      "reason": "large amount: 300000 > 100000 RUB",
+      "count": 2
+    }
+  ],
+  "last_activity": "2024-01-02T03:00:00"
+}
+
+========================================================================
+  ПОЛЬЗОВАТЕЛЬСКИЙ СЦЕНАРИЙ: Мария Смирнова
+========================================================================
+
+  --- Счета ---
+  Тип: BankAccount | Клиент: Мария Смирнова | Счет: ***ceaf | Статус: ACTIVE | Баланс: 44050.0 RUB
+  Тип: BankAccount | Клиент: Мария Смирнова | Счет: ***cd82 | Статус: ACTIVE | Баланс: 500 RUB [NEW]
+  Тип: BankAccount | Клиент: Мария Смирнова | Счет: ***e42f | Статус: ACTIVE | Баланс: 1100 RUB [NEW]
+
+  Суммарный баланс: 45650.00 (в валютах счетов)
+
+  --- История (audit_log, последние 10) ---
+  [12:00] INFO     transaction_completed: Tx tx35 completed
+  [12:00] WARNING  risk_alert: Medium risk: ['frequent: 7 ops in 10 min (limit 5)']
+  [12:00] ERROR    transaction_failed: Transaction tx31 failed
+  [12:00] WARNING  risk_alert: Medium risk: ['frequent: 7 ops in 10 min (limit 5)']
+  [12:00] INFO     transaction_completed: Tx tx20 completed
+  [12:00] WARNING  risk_alert: Medium risk: ['frequent: 6 ops in 10 min (limit 5)']
+  [12:00] INFO     transaction_completed: Tx tx19 completed
+  [12:00] WARNING  risk_alert: Medium risk: ['frequent: 5 ops in 10 min (limit 5)']
+  [12:00] INFO     transaction_completed: Tx tx18 completed
+  [12:00] INFO     transaction_completed: Tx tx15 completed
+
+  --- История (activity_log клиента) ---
+  [2026-11-18 01:07:50] Opened account 23183179-9be8-45f2-b871-2f5f7987ceaf (basic)
+  [2026-11-18 01:07:50] Opened account c11c2ed3-9bbf-42b8-a862-92cf62b0cd82 (basic)
+  [2026-11-18 01:07:50] Opened account 49017d8b-d7d2-49be-bf49-2a05aecde42f (basic)
+
+  --- Риск-профиль ---
+{
+  "client_id": "025e76db",
+  "client_name": "Мария Смирнова",
+  "risk_distribution": {
+    "low": 0,
+    "medium": 4,
+    "high": 0
+  },
+  "blocked_count": 0,
+  "top_reasons": [
+    {
+      "reason": "frequent: 7 ops in 10 min (limit 5)",
+      "count": 2
+    },
+    {
+      "reason": "frequent: 5 ops in 10 min (limit 5)",
+      "count": 1
+    },
+    {
+      "reason": "frequent: 6 ops in 10 min (limit 5)",
+      "count": 1
+    }
+  ],
+  "last_activity": "2024-01-01T12:00:00"
+}
+
+========================================================================
+  ПОЛЬЗОВАТЕЛЬСКИЙ СЦЕНАРИЙ: Сергей Александров
+========================================================================
+
+  --- Счета ---
+  Тип: BankAccount | Клиент: Сергей Александров | Счет: ***f6de | Статус: ACTIVE | Баланс: 500 RUB [NEW]
+
+  Суммарный баланс: 500.00 (в валютах счетов)
+
+  --- История (audit_log, последние 10) ---
+  [12:00] ERROR    transaction_failed: Transaction tx39 failed
+  [12:00] INFO     account_opened: Opened basic account aaed852a-d51a-4957-9111-f84f7b3df6de for 5e428146
+
+  --- История (activity_log клиента) ---
+  [2026-11-18 01:07:50] Opened account aaed852a-d51a-4957-9111-f84f7b3df6de (basic)
+
+  --- Риск-профиль ---
+{
+  "client_id": "5e428146",
+  "client_name": "Сергей Александров",
+  "risk_distribution": {
+    "low": 0,
+    "medium": 0,
+    "high": 0
+  },
+  "blocked_count": 0,
+  "top_reasons": [],
+  "last_activity": "2024-01-01T12:00:00"
+}
+
+========================================================================
+  7. ОТЧЁТЫ
+========================================================================
+
+========================================================================
+  ОТЧЁТЫ
+========================================================================
+
+  --- Топ-3 клиентов по суммарному балансу (мультивалютный) ---
+  1. Олег Петров               — 1683890.00 RUB
+  2. Анна Смирнова             — 937485.00 RUB, 4900.00 USD
+  3. Мария Смирнова            — 45650.00 RUB
+
+  --- Статистика транзакций ---
+  Всего:         40
+  Успешных:       29 (72.5%)
+  Отклонённых:    11 (27.5%)
+  Отменённых:      0 (0.0%)
+
+  По типам:      transfer=34, deposit=3, withdraw=3
+  По ошибкам:    insufficient_funds=6, risk_blocked=2, account_frozen=2, account_closed=1
+  Средние попытки для failed: 1.36
+  Dead-letter:   11 (должно совпадать с отклонёнными)
+
+  --- Общий баланс банка (по валютам) ---
+  EUR:         2900.00 (1 счетов)
+  RUB:      2688820.00 (13 счетов)
+  USD:         4900.00 (1 счетов)
+
+  --- Отчёт: подозрительные операции ---
+{
+  "period": {
+    "since": null,
+    "until": null
+  },
+  "total_alerts": 26,
+  "total_blocked": 2,
+  "by_client": {
+    "b8d8e6ce": {
+      "client_name": "Анна Смирнова",
+      "alerts": [
+        {
+          "tx_id": "tx03",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx16",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 150000 > 100000 RUB",
+            "frequent: 5 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx17",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 200000 > 100000 RUB",
+            "frequent: 6 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx21",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 7 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx22",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 8 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx24",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 300000 > 100000 RUB",
+            "frequent: 9 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx30",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 500000 > 100000 RUB",
+            "frequent: 10 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx32",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 200000 > 100000 RUB",
+            "frequent: 11 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx33",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx34",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx36",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx33",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx33",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 11 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx25",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)",
+            "night operation at 23:00"
+          ],
+          "timestamp": "2024-01-01T23:00:00"
+        },
+        {
+          "tx_id": "tx29",
+          "risk_level": "medium",
+          "reasons": [
+            "night operation at 03:00"
+          ],
+          "timestamp": "2024-01-02T03:00:00"
+        }
+      ],
+      "blocked": [
+        {
+          "tx_id": "tx23",
+          "risk_level": "high",
+          "reasons": [
+            "large amount: 150000 > 100000 RUB",
+            "frequent: 9 ops in 10 min (limit 5)",
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx26",
+          "risk_level": "high",
+          "reasons": [
+            "large amount: 300000 > 100000 RUB",
+            "new account: opened 0 days ago (limit 30)",
+            "night operation at 03:00"
+          ],
+          "timestamp": "2024-01-02T03:00:00"
+        }
+      ]
+    },
+    "36937b00": {
+      "client_name": "Елена Фёдорова",
+      "alerts": [
+        {
+          "tx_id": "tx07",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      ],
+      "blocked": []
+    },
+    "025e76db": {
+      "client_name": "Мария Смирнова",
+      "alerts": [
+        {
+          "tx_id": "tx19",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 5 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx20",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 6 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx31",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 7 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx35",
+          "risk_level": "medium",
+          "reasons": [
+            "frequent: 7 ops in 10 min (limit 5)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      ],
+      "blocked": []
+    },
+    "85c7bd01": {
+      "client_name": "Олег Петров",
+      "alerts": [
+        {
+          "tx_id": "tx27",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx40",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx40",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx40",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      ],
+      "blocked": []
+    },
+    "c8778609": {
+      "client_name": "Дмитрий Иванов",
+      "alerts": [
+        {
+          "tx_id": "tx28",
+          "risk_level": "medium",
+          "reasons": [
+            "new account: opened 0 days ago (limit 30)"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        },
+        {
+          "tx_id": "tx38",
+          "risk_level": "medium",
+          "reasons": [
+            "large amount: 5000 > 1000 EUR"
+          ],
+          "timestamp": "2024-01-01T12:00:00"
+        }
+      ],
+      "blocked": []
+    }
+  }
+}
+
+  --- Отчёт: статистика ошибок ---
+{
+  "period": {
+    "since": null
+  },
+  "total_errors": 11,
+  "by_code": {
+    "risk_blocked": 2,
+    "insufficient_funds": 6,
+    "account_closed": 1,
+    "account_frozen": 2
+  },
+  "by_event_type": {
+    "transaction_failed": 11
+  }
+}
+
+========================================================================
+  8. ФАЙЛ АУДИТА
+========================================================================
+  Файл: audit.jsonl | строк: 90
+  Первая:    {"event_type": "account_opened", "level": "INFO", "client_id": "b8d8e6ce", "account_id": "4e1c9f02-6a8b-4e1c-a...
+  Последняя: {"event_type": "transaction_failed", "level": "ERROR", "client_id": "b8d8e6ce", "account_id": null, "transacti...
+
+========================================================================
+  9. SELF-CHECKS
+========================================================================
+
+========================================================================
+  SELF-CHECKS (инварианты)
+========================================================================
+  [OK ] В очереди не осталось 'зависших' транзакций — in_flight=0
+  [FAIL] AuditLog содержит >= 100 записей — получено 90
+  [OK ] Есть >= 2 CRITICAL (риск-блокировки) — получено 2
+  [OK ] Есть >= 2 заблокированных по риску — получено 2
+  [OK ] Успешных >= 20 — получено 29
+  [OK ] Dead-letter == отклонённые — dead=11 failed=11
+  [OK ] Все failed имеют failure_code — без кода: []
+  [OK ] Audit: transaction_completed == completed — audit=29 txs=29
+  [OK ] Замороженный счёт irina_frozen не изменился — balance=500
+  [OK ] Закрытый счёт irina_block не изменился — balance=0
+  [OK ] maria_new баланс не отрицательный — balance=500
+
+  Итого: 10/11 проверок пройдено
+Traceback (most recent call last):
+  File "/Users/annaovdenko/Documents/projet/bank_class/src/main.py", line 563, in <module>
+    run_full_scenario()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/Users/annaovdenko/Documents/projet/bank_class/src/scenario.py", line 659, in run_full_scenario
+    _run_self_checks(infra["bank"], infra["queue"], infra["audit_log"],
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                     txs, accounts)
+                     ^^^^^^^^^^^^^^
+  File "/Users/annaovdenko/Documents/projet/bank_class/src/scenario.py", line 568, in _run_self_checks
+    assert all(checks), f"Провалено {len(checks) - sum(checks)} инвариантов"
+           ~~~^^^^^^^^
+AssertionError: Провалено 1 инвариантов

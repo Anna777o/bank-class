@@ -3,6 +3,8 @@ import sys
 import os
 import json
 import hashlib
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src')))
 from datetime import date, datetime, timedelta
 from models import BankAccount, SavingsAccount, PremiumAccount, InvestmentAccount, Client, Bank, Transaction, TransactionQueue, TransactionProcessor, AuditLog, AuditEntry, AuditLevel,RiskAnalyzer,RiskLevel, RiskEvent, AuditReporter
@@ -10,6 +12,9 @@ from utils import (
     ClientNotAdultError, ClientBlockedError, AuthenticationError,
     RestrictedTimeError, AccountNotFoundError, ClientNotAdultError, AccountClosedError,
     AccountFrozenError, InvalidOperationError, InsufficientFundsError, validate_amount, ClientNotFoundError
+)
+from reports import (
+    ChartType, ReportBuilder, ReportFormat, ReportType,
 )
 from currency_converter import CurrencyConverter
 
@@ -495,7 +500,7 @@ def test_retry_exhausted_moves_to_dead_letter(processor, queue, accounts):
 
 
 def test_transfer_different_currency_converts(processor, queue, bank, two_clients):
-    """USD→RUB: комиссия в валюте источника, конвертируется ТОЛЬКО amount."""
+    
     anna, oleg = two_clients
     src = bank.open_account(anna.client_id, "basic", balance=1000, currency="USD")
     dst = bank.open_account(oleg.client_id, "basic", balance=0, currency="RUB")
@@ -504,7 +509,7 @@ def test_transfer_different_currency_converts(processor, queue, bank, two_client
         "transfer", 100, "USD",
         from_account_id=src.account_id,
         to_account_id=dst.account_id,
-        commission=5,          # 5 USD — в валюте источника
+        commission=5,          
         transaction_id="t1",
         now_provider=NOW,
     )
@@ -1223,3 +1228,265 @@ def test_errors_by_event_type(audit, reporter):
         "transaction_failed": 1,
         "auth_failed": 1,
     }
+
+NOW = lambda: datetime(2024, 1, 1, 12, 0)
+
+
+@pytest.fixture
+def audit():
+    return AuditLog(now_provider=NOW)
+
+
+@pytest.fixture
+def bank(audit):
+    return Bank(now_provider=NOW, audit_log=audit)
+
+
+@pytest.fixture
+def converter():
+    return CurrencyConverter({("USD", "RUB"): 90.0, ("EUR", "RUB"): 100.0})
+
+
+@pytest.fixture
+def queue():
+    return TransactionQueue(now_provider=NOW)
+
+
+@pytest.fixture
+def processor(bank, queue, converter):
+    return TransactionProcessor(bank, queue, converter)
+
+
+@pytest.fixture
+def setup(bank, processor, queue, tmp_path):
+    """Банк с двумя клиентами и выполнёнными транзакциями."""
+    anna = Client("Анна", date(1990, 5, 15), {}, "p")
+    oleg = Client("Олег", date(1985, 9, 1), {}, "p")
+    bank.add_client(anna)
+    bank.add_client(oleg)
+
+    a_rub = bank.open_account(anna.client_id, "basic", balance=100_000, currency="RUB")
+    a_usd = bank.open_account(anna.client_id, "basic", balance=1_000, currency="USD")
+    a_rub.created_at = datetime(2023, 1, 1)
+    o_rub = bank.open_account(oleg.client_id, "basic", balance=0, currency="RUB")
+    o_rub.created_at = datetime(2023, 1, 1)
+
+    txs = []
+    for i in range(3):
+        tx = bank.create_transfer(
+            a_rub.account_id, o_rub.account_id,
+            amount=1000 + i * 100, currency="RUB",
+            external_rate=0.0, transaction_id=f"tx{i}",
+        )
+        queue.enqueue(tx)
+        processor.process_one()
+        txs.append(tx)
+
+    builder = ReportBuilder(bank, bank.audit_log, output_dir=tmp_path, now_provider=NOW)
+
+    return {
+        "bank": bank, "builder": builder, "txs": txs,
+        "anna": anna, "oleg": oleg,
+        "a_rub": a_rub, "a_usd": a_usd, "o_rub": o_rub,
+    }
+
+
+# ---------- _collect ----------
+def test_collect_client_report_structure(setup):
+    data = setup["builder"]._collect_client_report(setup["anna"].client_id)
+    assert data["report_type"] == "client"
+    assert data["client"]["full_name"] == "Анна"
+    assert len(data["accounts"]) == 2
+    assert "transactions" in data
+    assert "risk_profile" in data
+
+
+def test_collect_client_report_unknown_raises(setup):
+    with pytest.raises(ClientNotFoundError):
+        setup["builder"]._collect_client_report("nonexistent")
+
+
+def test_collect_bank_report_totals(setup):
+    data = setup["builder"]._collect_bank_report()
+    assert data["summary"]["total_clients"] == 2
+    assert data["summary"]["total_accounts"] == 3
+    assert data["transaction_stats"]["completed"] == 3
+    assert data["transaction_stats"]["failed"] == 0
+
+
+def test_collect_bank_report_no_double_count(setup):
+    """risk_blocked не должен добавляться к failed повторно."""
+    data = setup["builder"]._collect_bank_report()
+    assert data["transaction_stats"]["total"] == (
+        data["transaction_stats"]["completed"]
+        + data["transaction_stats"]["failed"]
+    )
+
+
+def test_collect_risk_report_empty(setup):
+    data = setup["builder"]._collect_risk_report()
+    assert data["summary"]["total_alerts"] == 0
+    assert data["summary"]["total_blocked"] == 0
+    assert data["by_client"] == {}
+
+
+
+def test_export_json_creates_file(setup, tmp_path):
+    path = setup["builder"].export_to_json(
+        ReportType.BANK, filename="bank.json",
+    )
+    assert path.exists()
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data["report_type"] == "bank"
+
+
+def test_export_json_auto_filename(setup):
+    path = setup["builder"].export_to_json(ReportType.BANK)
+    assert path.suffix == ".json"
+    assert path.exists()
+
+
+def test_export_csv_client_has_rows(setup):
+    path = setup["builder"].export_to_csv(
+        ReportType.CLIENT, client_id=setup["anna"].client_id,
+        filename="anna.csv",
+    )
+    lines = path.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 3  # header + 2 счёта
+    assert "account_id" in lines[0]
+
+
+def test_export_csv_bank_dynamic_currency_columns(setup):
+    """balance_RUB и balance_USD — динамические колонки."""
+    path = setup["builder"].export_to_csv(
+        ReportType.BANK, filename="bank.csv",
+    )
+    header = path.read_text(encoding="utf-8").splitlines()[0]
+    assert "balance_RUB" in header
+    assert "balance_USD" in header
+
+
+def test_export_csv_risk_empty_uses_placeholder(setup):
+    """Пустой риск-отчёт → файл с заглушкой, не падает."""
+    path = setup["builder"].export_to_csv(
+        ReportType.RISK, filename="risk.csv",
+    )
+    content = path.read_text(encoding="utf-8")
+    assert "(no data)" in content
+
+
+def test_export_creates_output_dir(setup, tmp_path):
+    setup["builder"].output_dir = tmp_path / "new" / "sub"
+    path = setup["builder"].export_to_json(ReportType.BANK)
+    assert path.exists()
+    assert path.parent.exists()
+
+
+# ---------- Графики ----------
+def test_chart_pie_returns_figure(setup):
+    fig = setup["builder"].chart_balance_pie(
+        ReportType.CLIENT, client_id=setup["anna"].client_id,
+    )
+    assert isinstance(fig, Figure)
+    assert len(fig.axes) == 1
+    assert len(fig.axes[0].patches) >= 2  # RUB + USD
+    plt.close(fig)
+
+
+def test_chart_pie_invalid_by(setup):
+    with pytest.raises(InvalidOperationError):
+        setup["builder"].chart_balance_pie(ReportType.BANK, by="color")
+
+
+def test_chart_pie_risk_raises(setup):
+    with pytest.raises(InvalidOperationError):
+        setup["builder"].chart_balance_pie(ReportType.RISK)
+
+
+def test_chart_bar_returns_figure(setup):
+    fig = setup["builder"].chart_transactions_bar(ReportType.BANK)
+    assert isinstance(fig, Figure)
+    assert len(fig.axes[0].patches) >= 1  # хотя бы один столбец
+    plt.close(fig)
+
+
+def test_chart_bar_empty_renders_text(setup):
+    fig = setup["builder"].chart_transactions_bar(ReportType.RISK)
+    ax = fig.axes[0]
+    assert len(ax.patches) == 0
+    assert any("Нет данных" in t.get_text() for t in ax.texts)
+    plt.close(fig)
+
+
+def test_chart_balance_flow_returns_figure(setup):
+    fig = setup["builder"].chart_balance_flow(
+        setup["anna"].client_id, transactions=setup["txs"],
+    )
+    assert isinstance(fig, Figure)
+    assert len(fig.axes[0].lines) >= 1
+    plt.close(fig)
+
+
+def test_chart_balance_flow_no_transactions(setup):
+    fig = setup["builder"].chart_balance_flow(setup["anna"].client_id)
+    ax = fig.axes[0]
+    assert len(ax.lines) == 0
+    assert any("Недостаточно" in t.get_text() for t in ax.texts)
+    plt.close(fig)
+
+
+def test_save_charts_creates_pngs(setup, tmp_path):
+    setup["builder"].output_dir = tmp_path
+    paths = setup["builder"].save_charts(
+        ReportType.CLIENT, client_id=setup["anna"].client_id,
+        charts=[ChartType.PIE, ChartType.BAR],
+        transactions=setup["txs"],
+    )
+    assert len(paths) == 2
+    for p in paths:
+        assert p.exists()
+        assert p.stat().st_size > 0
+        assert p.suffix == ".png"
+
+
+def test_save_charts_closes_figures(setup, tmp_path):
+    """После save_charts в matplotlib не должно остаться открытых фигур."""
+    setup["builder"].output_dir = tmp_path
+    setup["builder"].save_charts(
+        ReportType.CLIENT, client_id=setup["anna"].client_id,
+        charts=[ChartType.PIE, ChartType.BAR, ChartType.BALANCE_FLOW],
+        transactions=setup["txs"],
+    )
+    assert plt.get_fignums() == []
+
+
+
+def test_build_report_full(setup):
+    result = setup["builder"].build_report(
+        ReportType.BANK,
+        formats=[ReportFormat.JSON, ReportFormat.CSV],
+        charts=[ChartType.PIE, ChartType.BAR],
+    )
+    assert set(result.keys()) == {"data", "files", "charts", "text"}
+    assert len(result["files"]) == 2
+    assert len(result["charts"]) == 2
+    assert result["text"] is None
+
+
+def test_build_report_text_only(setup):
+    result = setup["builder"].build_report(
+        ReportType.BANK, formats=[ReportFormat.TEXT],
+    )
+    assert result["text"] is not None
+    assert result["files"] == []
+
+
+def test_run_all_reports(setup):
+    result = setup["builder"].run_all_reports(
+        client_ids=[setup["anna"].client_id],
+        transactions=setup["txs"],
+    )
+    assert "bank" in result
+    assert "risk" in result
+    assert "clients" in result
+    assert setup["anna"].client_id in result["clients"]
