@@ -1,3 +1,4 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 import uuid
 from pathlib import Path
@@ -22,8 +23,12 @@ logger = logging.getLogger("audit")
 class AbstractAccount(ABC):
     """Abstract base class"""
     def __init__(self, owner: str, account_id: str=None, balance: float = 0.0, now_provider=None):
-        self.account_id = str(uuid.uuid4()) if account_id is None else account_id
+        if balance < 0:
+            raise InvalidOperationError(
+            f"Начальный баланс не может быть отрицательным: {balance}"
+        )
         self._balance = balance
+        self.account_id = account_id if account_id else str(uuid.uuid4())[:8]
         self.owner = owner
         self.status = "active"
         self._now = now_provider or datetime.now     
@@ -70,8 +75,9 @@ class BankAccount(AbstractAccount):
         """Withdraw a specified amount from the account."""
         self.check_status()
         validate_amount(amount)
-        if amount > self.balance:
-            raise InsufficientFundsError("Insufficient funds for this withdrawal.")
+        can, reason = self.can_send(amount)
+        if not can:
+            raise InsufficientFundsError(reason)
         self._balance -= amount
 
     def get_account_info(self) -> str:
@@ -115,7 +121,7 @@ class BankAccount(AbstractAccount):
                 f"Статус: {self.status.upper()} | "
                 f"Баланс: {self.balance} {self.currency}")
     def can_send(self, amount: float) -> tuple[bool, str]:
-        if self._balance <= 0:
+        if self._balance < 0:
             return (False, "Balance is lower than 0, unable to have a transaction")
         if self._balance < amount:
             return (False, "Balance is lower than amount, unable to have a transaction")
@@ -138,16 +144,24 @@ class SavingsAccount(BankAccount):
     def withdraw(self, amount: float) -> None:
         self.check_status()
         validate_amount(amount)
-        if self.balance - amount < self.min_balance:
-            raise InvalidOperationError(f"Impossible to withdraw. Balance will fall below minimum balance ({self.min_balance} {self.currency}).")
+        can, reason = self.can_send(amount)
+        if not can:
+            raise InsufficientFundsError(reason)
         self._balance -= amount
 
     def get_account_info(self) -> dict:
         """Return account information."""
         info = super().get_account_info()
-        info.update({"min_balance": self.min_balance, "interest_rate": self.monthly_interest_rate})
+        info.update({"min_balance": self.min_balance, "interest_rate": self.interest_rate})
         return info
-
+    
+    def can_send(self, amount: float) -> tuple[bool, str]:
+        if self._balance - amount < self.min_balance:
+            return False, (
+            f"Снятие невозможно: остаток упадёт ниже min_balance "
+            f"({self.min_balance:.2f} {self.currency})"
+        )
+        return True, ""
     def __str__(self) -> str:
         """Return a string representation of the savings account."""
         base_str = super().__str__()
@@ -165,9 +179,12 @@ class PremiumAccount(BankAccount):
     def withdraw(self, amount: float) -> None:
         self.check_status()
         validate_amount(amount)
+
         total = amount + self.commission
-        if self.balance - total < -self.overdraft_limit:
-            raise InsufficientFundsError(f"Impossible to withdraw. Overdraft limit exceeded ({self.overdraft_limit} {self.currency}).")  
+
+        can, reason = self.can_send(total)
+        if not can:
+            raise InsufficientFundsError(reason)
         self._balance -= total
         print(f"[{self.account_id}] Commission: {self.commission} {self.currency}. new balance: {self.balance:.2f}")
 
@@ -227,6 +244,9 @@ class InvestmentAccount(BankAccount):
         base_str = super().__str__()
         total_invested = sum(self.portfolio.values())
         return f"{base_str} | Invested: {total_invested} {self.currency}"
+    
+    def withdraw(self, amount: float) -> None:
+        super().withdraw(amount)
 
 #day3
 class Client():
@@ -596,22 +616,33 @@ class Bank():
             result.append(acc)
         return result
 
-    def get_total_balance(self, client_id: str | None = None) -> float:
+    def get_total_balance(self, client_id: str | None = None) -> dict[str, float]:
+        from collections import defaultdict
+        totals: dict[str, float] = defaultdict(float)
+
         if client_id:
             client = self._get_client(client_id)
-            return sum(
-                self.accounts[aid].balance
-                for aid in client.account_ids
-                if aid in self.accounts
-            )
-        return sum(acc.balance for acc in self.accounts.values())
+            for aid in client.account_ids:
+                acc = self.accounts.get(aid)
+                if acc and acc.status != "closed":
+                    totals[acc.currency] += acc.balance
+        else:
+            for acc in self.accounts.values():
+                if acc.status != "closed":
+                    totals[acc.currency] += acc.balance
 
-    def get_clients_ranking(self) -> list[tuple[Client, float]]:
+        return dict(totals)
+
+    def get_clients_ranking(self) -> list[tuple[Client, dict[str, float]]]:
         ranking = [
             (client, self.get_total_balance(client.client_id))
             for client in self.clients.values()
         ]
-        ranking.sort(key=lambda x: x[1], reverse=True)
+    # Сортировка по RUB (или первой доступной валюте, если RUB нет)
+        ranking.sort(
+            key=lambda x: x[1].get("RUB", sum(x[1].values())),
+            reverse=True,
+        )
         return ranking
 
     # ---------- Переводы ----------
@@ -918,30 +949,27 @@ class TransactionProcessor:
    
     def _process_transaction(self, tx: "Transaction") -> bool:
         tx.mark_processing()
-    # client_id нужен и для риска, и для аудита
         client_id = (
             self.bank.account_owners.get(tx.from_account_id)
             or self.bank.account_owners.get(tx.to_account_id)
         )
-
         try:
             if self.risk_check:
                 self.bank.analyze_transaction_risk(tx)   
 
+        
+            self.bank._check_time()                      # 03:00 → RestrictedTimeError
+
             self._dispatch(tx)
             tx.mark_completed()
-            self.log.info(f"Tx completed: {tx.id}")
-
-        
             self.bank.audit_log.info(
-                "transaction_completed",
-                f"Tx {tx.id} completed",
-                transaction_id=tx.id,
-                client_id=client_id,
-                amount=tx.amount,
-                currency=tx.currency,
+                "transaction_completed", f"Tx {tx.id} completed",
+                transaction_id=tx.id, client_id=client_id,
+                amount=tx.amount, currency=tx.currency,
                 tx_type=tx.type,
-                )
+                from_account_id=tx.from_account_id,
+                to_account_id=tx.to_account_id,
+            )
             return True
         except Exception as exc:
             return self._handle_error(tx, exc, client_id)
@@ -1002,7 +1030,11 @@ class TransactionProcessor:
     # ФАЗА 1: проверки
         src = self._get_active_account(tx.from_account_id)
         dst = self._get_active_account(tx.to_account_id)
-
+        if tx.currency != src.currency:
+            raise InvalidOperationError(
+            f"Transaction currency ({tx.currency}) does not match "
+            f"with ({src.currency})"
+            )
         can, reason = src.can_send(tx.total_debit)          
         if not can:
             raise InsufficientFundsError(reason)
@@ -1019,8 +1051,11 @@ class TransactionProcessor:
 
     def _execute_withdraw(self, tx: "Transaction") -> None:
         src = self._get_active_account(tx.from_account_id)
-        if tx.total_debit > src.balance:
-            raise InsufficientFundsError(...)
+        if tx.currency != src.currency:
+            raise InvalidOperationError("Currency does not match")
+        can, reason = src.can_send(tx.total_debit)
+        if not can:
+            raise InsufficientFundsError(f"Can't withdraw {reason}")
         src._balance -= tx.total_debit
 
     def _get_active_account(self, account_id: str) -> "BankAccount":
@@ -1048,6 +1083,7 @@ class TransactionProcessor:
         InvalidOperationError:  "invalid_operation",
         ClientBlockedError:     "client_blocked",
         SuspiciousTransactionError: "risk_blocked",
+        RestrictedTimeError: "restricted_time"
     }
 #day5
 class AuditLevel(Enum):

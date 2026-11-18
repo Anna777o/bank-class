@@ -54,8 +54,9 @@ def run_demo():
 
     try:
         saving_acc.withdraw(1000.0)
-    except InvalidOperationError as e:
-        print(f"Expected error {e}")
+        print(f"  [OK] Снятие 1000: balance={saving_acc.balance:.2f}")
+    except InsufficientFundsError as e:
+        print(f"  [EXPECTED] {type(e).__name__}: {e}")
     saving_acc.withdraw(300.0)
     saving_acc.apply_monthly_interest()
     print(saving_acc)
@@ -558,7 +559,7 @@ def demo_time_restriction() -> None:
 
 if __name__ == "__main__":
     #run_demo()
-    #run_10_transactions_demo()
-    #demo_main()
+    run_10_transactions_demo()
+    demo_main()
     run_full_scenario()
  

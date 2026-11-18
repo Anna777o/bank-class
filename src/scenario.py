@@ -403,8 +403,9 @@ def _show_user_scenarios(bank, audit_log, client: Client) -> None:
             elif (bank._now() - acc.created_at).days < 30:
                 tag = " [NEW]"
             print(f"  {acc}{tag}")
-        print(f"\n  Суммарный баланс: {bank.get_total_balance(client.client_id):.2f} "
-              f"(в валютах счетов)")
+        totals = bank.get_total_balance(client.client_id)
+        breakdown = ", ".join(f"{v:,.2f} {c}" for c, v in sorted(totals.items())) or "—"
+        print(f"\n  Суммарный баланс: {breakdown}")
 
    
     subsection("История (audit_log, последние 10)")
@@ -448,16 +449,13 @@ def _show_reports(bank, txs, queue) -> None:
     
     subsection("Топ-3 клиентов по суммарному балансу (мультивалютный)")
     ranking = bank.get_clients_ranking()
-    # Берём всех, но выводим по-валютно для честности
-    for i, (client, _total) in enumerate(ranking[:3], 1):
-        per_currency: dict[str, float] = defaultdict(float)
-        for aid in client.account_ids:
-            acc = bank.accounts.get(aid)
-            if acc and acc.status != "closed":
-                per_currency[acc.currency] += acc.balance
-        breakdown = ", ".join(f"{v:.2f} {c}" for c, v in sorted(per_currency.items()))
-        print(f"  {i}. {client.full_name:25s} — {breakdown or '—'}")
 
+    for i, (client, totals) in enumerate(ranking[:3], 1):
+        # totals — уже dict {"RUB": X, "USD": Y}, не число
+        breakdown = ", ".join(
+            f"{v:,.2f} {c}" for c, v in sorted(totals.items())
+        ) or "—"
+        print(f"  {i}. {client.full_name:25s} — {breakdown}")
     
     subsection("Статистика транзакций")
     completed = [tx for tx in txs if tx.status == "completed"]
@@ -580,7 +578,8 @@ def _demo_reports(infra: dict, clients: dict, txs: list) -> None:
         now_provider=infra["now_provider"],
     )
 
-    # 1. Текст — выводим в консоль
+
+
     print(builder.render_text(ReportType.BANK))
     print()
     print(builder.render_text(ReportType.RISK))

@@ -12,7 +12,10 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.figure import Figure
+from currency_converter import CurrencyConverter
+import logging
 
+logger = logging.getLogger(__name__)
 
 from models import AuditLevel, AuditLog
 from models import Bank
@@ -48,7 +51,7 @@ class ReportBuilder:
         output_dir: str | Path = "reports",
         now_provider: Callable[[], datetime] | None = None,
         dpi: int = 100,
-        figsize: tuple[float, float] = (10, 6),
+        figsize: tuple[float, float] = (10, 6), converter=None
     ):
         self.bank = bank
         self.audit_log = audit_log
@@ -58,13 +61,20 @@ class ReportBuilder:
         self.dpi = dpi
         self.figsize = figsize
         self._now = now_provider or datetime.now 
+        self.converter = converter or CurrencyConverter({
+        ("USD", "RUB"): 90.0, ("RUB", "USD"): 0.011,
+        ("EUR", "RUB"): 100.0, ("RUB", "EUR"): 0.010,
+        ("USD", "EUR"): 0.92, ("EUR", "USD"): 1.09,
+    })
     def _collect_client_report(self, client_id: str) -> dict:
-   
+        from collections import Counter, defaultdict
+
+    # ─── 1. Клиент ───
         client = self.bank.clients.get(client_id)
         if client is None:
             raise ClientNotFoundError(f"Client {client_id} not found")
 
-   
+    # ─── 2. Счета клиента ───
         accounts_data: list[dict] = []
         total_by_currency: dict[str, float] = defaultdict(float)
         for aid in client.account_ids:
@@ -72,17 +82,17 @@ class ReportBuilder:
             if acc is None:
                 continue
             accounts_data.append({
-                "account_id": acc.account_id,
-                "type": type(acc).__name__,        
-                "currency": acc.currency,
-                "balance": acc.balance,
-                "status": acc.status,
-                "created_at": acc.created_at.isoformat() if acc.created_at else None,
+            "account_id": acc.account_id,
+            "type": type(acc).__name__,
+            "currency": acc.currency,
+            "balance": acc.balance,
+            "status": acc.status,
+            "created_at": acc.created_at.isoformat() if acc.created_at else None,
             })
             if acc.status != "closed":
                 total_by_currency[acc.currency] += acc.balance
 
-    
+   
         completed = self.audit_log.get_entries(
             event_type="transaction_completed", client_id=client_id,
         )
@@ -95,50 +105,56 @@ class ReportBuilder:
         risk_blocked = self.audit_log.get_entries(
             event_type="risk_blocked", client_id=client_id,
         )
+        all_tx_ids: set[str] = {
+            e.transaction_id
+            for e in completed + failed
+            if e.transaction_id
+        }
 
-        by_type: dict[str, int] = defaultdict(int)
+    # ─── 5. by_type (из metadata["tx_type"]) ───
+        by_type: Counter[str] = Counter()
         for e in completed + failed + risk_blocked:
             tx_type = e.metadata.get("tx_type")
             if tx_type:
                 by_type[tx_type] += 1
 
-
+    # ─── 6. Последние 10 событий ───
         recent = self.audit_log.get_entries(
             client_id=client_id, limit=10, reverse=True,
         )
 
         return {
-            "report_type": "client",
-            "generated_at": self._now().isoformat(),
-            "client": {
-                "client_id": client.client_id,
-                "full_name": client.full_name,
-                "status": client.status,
-                "contacts": dict(client.contacts),
-                "suspicious": client.suspicious_activity,
-            },
-            "accounts": accounts_data,
-            "total_balance_by_currency": dict(total_by_currency),
-            "transactions": {
-                "total": len(completed) + len(failed) + len(risk_blocked),
-                "completed": len(completed),
-                "failed": len(failed),
-                "risk_blocked": len(risk_blocked),
-                "retried": len(retried),
-                "by_type": dict(by_type),
-                "recent": [
-                    {
-                        "timestamp": e.timestamp.isoformat(),
-                        "level": e.level.name,
-                        "event_type": e.event_type,
-                        "message": e.message,
-                        "tx_id": e.transaction_id,
-                    }
-                    for e in recent
-                ],
-            },
-            "risk_profile": self.bank.report_client_risk_profile(client_id),
+        "report_type": "client",
+        "generated_at": self._now().isoformat(),
+        "client": {
+            "client_id": client.client_id,
+            "full_name": client.full_name,
+            "status": client.status,
+            "contacts": dict(client.contacts),
+            "suspicious": client.suspicious_activity,
+        },
+        "accounts": accounts_data,
+        "total_balance_by_currency": dict(total_by_currency),
+        "transactions": {
+            "total": len(all_tx_ids),              # ✅ без двойного счёта
+            "completed": len(completed),
+            "failed": len(failed),
+            "risk_blocked": len(risk_blocked),     # информационно; входит в failed
+            "retried": len(retried),
+            "by_type": dict(by_type),
+            "recent": [
+                {
+                    "timestamp": e.timestamp.isoformat(),
+                    "level": e.level.name,
+                    "event_type": e.event_type,
+                    "message": e.message,
+                    "tx_id": e.transaction_id,
                 }
+                for e in recent
+            ],
+        },
+        "risk_profile": self.bank.report_client_risk_profile(client_id),
+    }
        
 
     def _collect_bank_report(self) -> dict:
@@ -170,17 +186,12 @@ class ReportBuilder:
 
         ranking = self.bank.get_clients_ranking()[:5]
         top_clients: list[dict] = []
-        for client, _total in ranking:
-            per_ccy: dict[str, float] = defaultdict(float)
-            for aid in client.account_ids:
-                acc = self.bank.accounts.get(aid)
-                if acc and acc.status != "closed":
-                    per_ccy[acc.currency] += acc.balance
+        for client, totals_by_currency in ranking:
             top_clients.append({
-                "client_id": client.client_id,
-                "full_name": client.full_name,
-                "accounts_count": len(client.account_ids),
-                "total_by_currency": dict(per_ccy),
+            "client_id": client.client_id,
+            "full_name": client.full_name,
+            "accounts_count": len(client.account_ids),
+            "total_by_currency": dict(totals_by_currency),   # ✅ уже dict
             })
 
         return {
@@ -922,7 +933,7 @@ class ReportBuilder:
 
         for tx in reversed(relevant):
             if tx.from_account_id == account_id and tx.to_account_id == account_id:
-                continue  # self-transfer — нет чистого изменения
+                continue  
             if tx.from_account_id == account_id:
                 balance += tx.total_debit
             elif tx.to_account_id == account_id:
@@ -930,11 +941,9 @@ class ReportBuilder:
                     converted = tx.amount
                 else:
                     try:
-                        converted = self.converter.convert(
-                        tx.amount, tx.currency, account.currency,
-                    )
-                    except Exception:
-                        continue
+                        converted = self.converter.convert(tx.amount, tx.currency, account.currency)
+                    except InvalidOperationError as exc:
+                        logger.warning("Skipping tx %s in balance flow: %s", tx.id, exc)
                 balance -= converted
             points.append((tx.processed_at or tx.created_at, balance))
 

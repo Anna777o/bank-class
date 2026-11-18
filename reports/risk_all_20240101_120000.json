@@ -10,7 +10,7 @@
     "affected_clients": 5
   },
   "by_client": {
-    "25e6edc0": {
+    "36e912db": {
       "client_name": "Анна Смирнова",
       "alerts": [
         {
@@ -173,7 +173,7 @@
         "high": 2
       }
     },
-    "1b0facfc": {
+    "bf0ea187": {
       "client_name": "Елена Фёдорова",
       "alerts": [
         {
@@ -190,7 +190,7 @@
         "medium": 1
       }
     },
-    "9e176d4f": {
+    "1da2c74a": {
       "client_name": "Мария Смирнова",
       "alerts": [
         {
@@ -231,7 +231,7 @@
         "medium": 4
       }
     },
-    "4332c6d5": {
+    "34783f8f": {
       "client_name": "Олег Петров",
       "alerts": [
         {
@@ -272,7 +272,7 @@
         "medium": 4
       }
     },
-    "34ba501d": {
+    "3cdf1cc4": {
       "client_name": "Дмитрий Иванов",
       "alerts": [
         {
@@ -343,7 +343,7 @@
   "blocked_transactions": [
     {
       "tx_id": "tx23",
-      "client_id": "25e6edc0",
+      "client_id": "36e912db",
       "reasons": [
         "large amount: 150000 > 100000 RUB",
         "frequent: 9 ops in 10 min (limit 5)",
@@ -353,7 +353,7 @@
     },
     {
       "tx_id": "tx26",
-      "client_id": "25e6edc0",
+      "client_id": "36e912db",
       "reasons": [
         "large amount: 300000 > 100000 RUB",
         "new account: opened 0 days ago (limit 30)",
