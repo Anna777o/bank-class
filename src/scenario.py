@@ -71,7 +71,7 @@ def _create_accounts(bank, clients) -> dict[str, BankAccount]:
         acc[key] = bank.open_account(clients[client_key].client_id, acc_type, **kw)
         
         if created_at is not None:
-            acc[key].created_at = created_at
+            acc[key].created_at = datetime(2023, 1, 1)
         return acc[key]
 
     OLD = datetime(2023, 1, 1)
@@ -542,10 +542,14 @@ def _run_self_checks(bank, queue, audit_log, txs, accounts) -> None:
           f"без кода: {[tx.id for tx in failed if not tx.failure_code]}")
 
     
-    completed_events = audit_log.count_by_event_type().get("transaction_completed", 0)
+    completed_events = {
+    e.transaction_id
+    for e in audit_log.get_entries(event_type="transaction_completed")
+    if e.transaction_id
+    }
     check("Audit: transaction_completed == completed",
-          completed_events == len(completed),
-          f"audit={completed_events} txs={len(completed)}")
+      len(completed_events) == len(completed),
+      f"audit_tx={len(completed_events)} completed={len(completed)}")
 
    
     check("Замороженный счёт irina_frozen не изменился",

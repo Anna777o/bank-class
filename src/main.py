@@ -560,6 +560,6 @@ def demo_time_restriction() -> None:
 if __name__ == "__main__":
     #run_demo()
     run_10_transactions_demo()
-    demo_main()
+    #demo_main()
     run_full_scenario()
  

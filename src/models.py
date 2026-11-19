@@ -50,13 +50,13 @@ class AbstractAccount(ABC):
 class BankAccount(AbstractAccount):
     """Main class for bank account"""
     VALID_CURRENCIES = ["RUB", "USD", "EUR", "KZT", "CNY"]
-    def __init__(self, owner: str, account_id: str=None, balance: float = 0.0, currency: str = "USD", created_at: datetime = None,
+    def __init__(self, owner: str, account_id: str=None, balance: float = 0.0, currency: str = "RUB", created_at: datetime = None,
                  now_provider: datetime = None):
         super().__init__(owner, account_id, balance, now_provider=now_provider)
         if currency not in self.VALID_CURRENCIES:
             raise InvalidOperationError(f"Invalid currency. Valid options are: {', '.join(self.VALID_CURRENCIES)}")
         self.currency = currency
-        self.created_at = self._now()
+        #self.created_at = self._now()
 
     def check_status(self) -> None:
         """Check the account status and raise an error if it's not active."""
@@ -172,7 +172,7 @@ class SavingsAccount(BankAccount):
 class PremiumAccount(BankAccount):
     """Premium account with higher interest and benefits."""
     def __init__(self, owner: str, account_id: str=None, balance: float = 0.0, currency: str = "USD", overdraft_limit: float = 1000.0, commission: float = 50.0, now_provider=None):
-        super().__init__(owner, account_id, balance, currency, now_provider,)
+        super().__init__(owner, account_id, balance, currency, now_provider = now_provider,)
         self.overdraft_limit = overdraft_limit
         self.commission = commission
 
@@ -212,7 +212,7 @@ class InvestmentAccount(BankAccount):
     VALID_ASSETS = ["stocks", "bonds", "etf"]
     """Investment account for managing investments."""
     def __init__(self, owner: str, account_id: str=None, balance: float = 0.0, currency: str = "USD", now_provider=None):
-        super().__init__(owner, account_id, balance, currency, now_provider)
+        super().__init__(owner, account_id, balance, currency, now_provider = now_provider)
         self.portfolio = {asset: 0.0 for asset in self.VALID_ASSETS}
 
     def invest(self, option: str, amount: float) -> None:
@@ -336,7 +336,15 @@ class Bank():
         audit_log: AuditLog | None = None,
         risk_analyzer: RiskAnalyzer | None = None,
         report_path: str | None = None,
+        base_currency="RUB"
     ):
+        from currency_converter import CurrencyConverter
+        self.converter = CurrencyConverter({
+        ("USD", "RUB"): 90.0, ("RUB", "USD"): 0.011,
+        ("EUR", "RUB"): 100.0, ("RUB", "EUR"): 0.010,
+        ("USD", "EUR"): 0.92, ("EUR", "USD"): 1.09,
+        })
+        self.base_currency = base_currency
         self._now = now_provider or datetime.now
         self.clients: dict[str, Client] = {}
         self.accounts: dict[str, BankAccount] = {}
@@ -634,15 +642,28 @@ class Bank():
         return dict(totals)
 
     def get_clients_ranking(self) -> list[tuple[Client, dict[str, float]]]:
+        def _to_base(totals: dict[str, float]) -> float:
+            total = 0.0
+            for ccy, amount in totals.items():
+                if ccy == self.base_currency:
+                    total += amount
+                else:
+                    try:
+                        total += self.converter.convert(
+                        amount, ccy, self.base_currency,
+                        )
+                    except InvalidOperationError:
+                        logger.warning(
+                        "No rate %s→%s for ranking; using 0",
+                        ccy, self.base_currency,
+                    )
+            return total
         ranking = [
             (client, self.get_total_balance(client.client_id))
             for client in self.clients.values()
         ]
-    # Сортировка по RUB (или первой доступной валюте, если RUB нет)
-        ranking.sort(
-            key=lambda x: x[1].get("RUB", sum(x[1].values())),
-            reverse=True,
-        )
+    # Сортировка по RUB 
+        ranking.sort(key=lambda x: _to_base(x[1]), reverse=True)
         return ranking
 
     # ---------- Переводы ----------
@@ -949,30 +970,42 @@ class TransactionProcessor:
    
     def _process_transaction(self, tx: "Transaction") -> bool:
         tx.mark_processing()
-        client_id = (
-            self.bank.account_owners.get(tx.from_account_id)
-            or self.bank.account_owners.get(tx.to_account_id)
-        )
+        from_client_id = self.bank.account_owners.get(tx.from_account_id)
+        to_client_id = self.bank.account_owners.get(tx.to_account_id)
         try:
             if self.risk_check:
-                self.bank.analyze_transaction_risk(tx)   
-
-        
-            self.bank._check_time()                      # 03:00 → RestrictedTimeError
-
+                self.bank.analyze_transaction_risk(tx)
+            self.bank._check_time()
             self._dispatch(tx)
             tx.mark_completed()
-            self.bank.audit_log.info(
-                "transaction_completed", f"Tx {tx.id} completed",
-                transaction_id=tx.id, client_id=client_id,
-                amount=tx.amount, currency=tx.currency,
-                tx_type=tx.type,
+        
+        # Событие для отправителя (или только для получателя, если deposit)
+            if from_client_id:
+                self.bank.audit_log.info(
+                "transaction_completed", f"Tx {tx.id} completed (sent)",
+                transaction_id=tx.id, client_id=from_client_id,
+                amount=tx.amount, currency=tx.currency, tx_type=tx.type,
                 from_account_id=tx.from_account_id,
                 to_account_id=tx.to_account_id,
-            )
+                direction="outgoing",
+                )
+        
+        # Событие для получателя (если есть и это не тот же клиент)
+            if to_client_id and to_client_id != from_client_id:
+                self.bank.audit_log.info(
+                "transaction_completed", f"Tx {tx.id} completed (received)",
+                transaction_id=tx.id, client_id=to_client_id,
+                amount=tx.amount, currency=tx.currency, tx_type=tx.type,
+                from_account_id=tx.from_account_id,
+                to_account_id=tx.to_account_id,
+                direction="incoming",
+                )
+        
             return True
         except Exception as exc:
-            return self._handle_error(tx, exc, client_id)
+            return self._handle_error(tx, exc, from_client_id or to_client_id)  
+
+        
 
 
     def _handle_error(self, tx: "Transaction", exc: Exception, client_id: str | None) -> bool:
@@ -1030,33 +1063,43 @@ class TransactionProcessor:
     # ФАЗА 1: проверки
         src = self._get_active_account(tx.from_account_id)
         dst = self._get_active_account(tx.to_account_id)
+
         if tx.currency != src.currency:
             raise InvalidOperationError(
             f"Transaction currency ({tx.currency}) does not match "
             f"with ({src.currency})"
             )
-        can, reason = src.can_send(tx.total_debit)          
+        account_commission = getattr(src, "commission", 0.0)
+        total = tx.total_debit + account_commission
+        can, reason = src.can_send(total)          
         if not can:
             raise InsufficientFundsError(reason)
 
         converted = self.converter.convert(tx.amount, tx.currency, dst.currency)
 
     # ФАЗА 2: изменения
-        src._balance -= tx.total_debit
+        src._balance -= total
         dst._balance += converted
 
     def _execute_deposit(self, tx: "Transaction") -> None:
         dst = self._get_active_account(tx.to_account_id)
+        if tx.currency != dst.currency:
+            raise InvalidOperationError(
+            f"Currency ({tx.currency}) does not match "
+            f"with ({dst.currency})"
+        )
         dst._balance += tx.amount
 
     def _execute_withdraw(self, tx: "Transaction") -> None:
         src = self._get_active_account(tx.from_account_id)
         if tx.currency != src.currency:
             raise InvalidOperationError("Currency does not match")
-        can, reason = src.can_send(tx.total_debit)
+        account_commission = getattr(src, "commission", 0.0)
+        total = tx.total_debit + account_commission
+        can, reason = src.can_send(total)
         if not can:
             raise InsufficientFundsError(f"Can't withdraw {reason}")
-        src._balance -= tx.total_debit
+        src._balance -= total
 
     def _get_active_account(self, account_id: str) -> "BankAccount":
         acc = self.bank.accounts.get(account_id)

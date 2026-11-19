@@ -173,8 +173,18 @@ class ReportBuilder:
         failed = self.audit_log.get_entries(event_type="transaction_failed")
         retries = self.audit_log.get_entries(event_type="transaction_retry")
 
+        completed_ids: set[str] = {
+        e.transaction_id for e in completed if e.transaction_id
+        }
+        failed_ids: set[str] = {
+        e.transaction_id for e in failed if e.transaction_id
+        }
         by_type: Counter[str] = Counter()
+        seen_for_type: set[str] = set()
         for e in completed + failed:
+            if not e.transaction_id or e.transaction_id in seen_for_type:
+                continue
+            seen_for_type.add(e.transaction_id)
             tx_type = e.metadata.get("tx_type")
             if tx_type:
                 by_type[tx_type] += 1
@@ -191,7 +201,7 @@ class ReportBuilder:
             "client_id": client.client_id,
             "full_name": client.full_name,
             "accounts_count": len(client.account_ids),
-            "total_by_currency": dict(totals_by_currency),   # ✅ уже dict
+            "total_by_currency": dict(totals_by_currency),   
             })
 
         return {
@@ -215,9 +225,9 @@ class ReportBuilder:
 
        
             "transaction_stats": {
-                "total": len(completed) + len(failed),  
-                "completed": len(completed),
-                "failed": len(failed),
+                "total": len(completed_ids) + len(failed_ids),  
+                "completed": len(completed_ids),
+                "failed": len(failed_ids),
                 "cancelled": 0,                          
                 "retries": len(retries),
                 "by_type": dict(by_type),
@@ -944,6 +954,7 @@ class ReportBuilder:
                         converted = self.converter.convert(tx.amount, tx.currency, account.currency)
                     except InvalidOperationError as exc:
                         logger.warning("Skipping tx %s in balance flow: %s", tx.id, exc)
+                        continue
                 balance -= converted
             points.append((tx.processed_at or tx.created_at, balance))
 

@@ -1493,3 +1493,80 @@ def test_run_all_reports(setup):
     assert "risk" in result
     assert "clients" in result
     assert setup["anna"].client_id in result["clients"]
+
+def test_premium_commission_applied_in_withdraw(bank, queue, processor):
+   
+    c = Client("Тест", date(1990, 1, 1), {}, "p")
+    bank.add_client(c)
+    
+    prem = bank.open_account(c.client_id, "premium",
+                              balance=1000, currency="RUB",
+                              overdraft_limit=500, commission=50)
+    tx = Transaction("withdraw", 400, "RUB",
+                     from_account_id=prem.account_id,
+                     commission=0, transaction_id="t1", now_provider=NOW)
+    queue.enqueue(tx)
+    processor.process_one()
+    assert prem.balance == 550
+
+def test_deposit_wrong_currency_rejected(bank, queue, processor):
+    c = Client("Тест", date(1990, 1, 1), {}, "p")
+    bank.add_client(c)
+    usd = bank.open_account(c.client_id, "basic", balance=100, currency="USD")
+    tx = Transaction("deposit", 100, "RUB", to_account_id=usd.account_id,
+                     commission=0, transaction_id="t1", now_provider=NOW)
+    queue.enqueue(tx); processor.process_one()
+    assert tx.status == "failed"
+    assert tx.failure_code == "invalid_operation"
+    assert usd.balance == 100
+
+def test_recipient_sees_incoming_transfer(bank, queue, processor):
+    c = Client("Тест", date(1990, 1, 1), {}, "p"); bank.add_client(c)
+    c1 = Client("Тест", date(1990, 1, 1), {}, "p"); bank.add_client(c1)
+    src = bank.open_account(c.client_id, "basic", balance=1000)
+    dst = bank.open_account(c1.client_id, "basic", balance=0)
+    tx = Transaction("transfer", 100, "RUB",
+                     from_account_id=src.account_id,
+                     to_account_id=dst.account_id,
+                     commission=0, transaction_id="t1", now_provider=NOW)
+    queue.enqueue(tx); processor.process_one()
+
+    all_events = bank.audit_log.get_entries(event_type="transaction_completed")
+
+    oleg_events = bank.audit_log.get_entries(
+        event_type="transaction_completed", client_id=c1.client_id,
+    )
+    assert len(oleg_events) == 1
+
+def test_account_created_at_from_now_provider(bank):
+    c = Client("Тест", date(1990, 1, 1), {}, "p")
+    bank.add_client(c)
+    prem = bank.open_account(c.client_id, "premium", balance=100)
+    inv = bank.open_account(c.client_id, "investment", balance=100)
+    assert prem.created_at == datetime(2024, 1, 1, 12, 0)
+    assert inv.created_at == datetime(2024, 1, 1, 12, 0)
+
+def test_ranking_by_base_currency(bank):
+    c = Client("Тест", date(1990, 1, 1), {}, "p")
+    bank.add_client(c)
+    c1 = Client("Тест1", date(1990, 1, 1), {}, "p")
+    bank.add_client(c1)
+    c2 = Client("Тест1", date(1990, 1, 1), {}, "p")
+    bank.add_client(c2)
+    bank.open_account(c.client_id, "basic", balance=2, currency="RUB")
+    bank.open_account(c1.client_id, "basic", balance=1, currency="RUB")
+    bank.open_account(c2.client_id, "basic", balance=1_000_000, currency="USD")
+    ranking = bank.get_clients_ranking()
+    assert ranking[0][0] is c2
+
+def test_chart_balance_flow_missing_rate_no_crash(setup):
+    from reports import ReportBuilder
+    b = ReportBuilder(setup["bank"], setup["bank"].audit_log,
+                      now_provider=NOW, converter=CurrencyConverter({}))
+    tx = Transaction("transfer", 100, "KZT",
+                     from_account_id="ext", to_account_id=setup["a_rub"].account_id,
+                     commission=0, transaction_id="t_kzt", now_provider=NOW)
+    tx.status = "completed"; tx.processed_at = NOW()
+    fig = b.chart_balance_flow(setup["anna"].client_id, transactions=[tx])
+    assert fig is not None
+    plt.close(fig)
