@@ -30,10 +30,21 @@ def _create_infrastructure() -> dict:
     audit_log = AuditLog(log_file="audit.jsonl", max_entries=5000, now_provider=lambda: now[0])
     bank = Bank(now_provider=lambda: now[0], audit_log=audit_log)
     converter = CurrencyConverter({
-        ("USD", "RUB"): 90.0,  ("RUB", "USD"): 0.011,
+        ("USD", "RUB"): 90.0, ("RUB", "USD"): 0.011,
         ("EUR", "RUB"): 100.0, ("RUB", "EUR"): 0.010,
-        ("USD", "EUR"): 0.92,  ("EUR", "USD"): 1.09,
-    })
+        ("USD", "EUR"): 0.92, ("EUR", "USD"): 1.09,
+        ("RUB", "KZT"): 5.5,   ("KZT", "RUB"): 1 / 5.5,
+    # RUB ↔ CNY  (1 CNY ≈ 12.5 RUB)
+        ("RUB", "CNY"): 0.08,  ("CNY", "RUB"): 12.5,
+    # USD ↔ KZT  (1 USD ≈ 495 KZT)
+        ("USD", "KZT"): 495.0, ("KZT", "USD"): 1 / 495,
+    # USD ↔ CNY
+        ("USD", "CNY"): 7.2,   ("CNY", "USD"): 1 / 7.2,
+    # EUR ↔ KZT
+        ("EUR", "KZT"): 545.0, ("KZT", "EUR"): 1 / 545,
+    # EUR ↔ CNY
+        ("EUR", "CNY"): 7.85,  ("CNY", "EUR"): 1 / 7.85,
+        })
     queue = TransactionQueue(now_provider=now_provider)
     processor = TransactionProcessor(bank, queue, converter)
     print(str(bank.risk_analyzer.thresholds))

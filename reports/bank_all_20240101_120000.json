@@ -43,46 +43,56 @@
   },
   "top_clients": [
     {
-      "client_id": "4f62e2c2",
+      "client_id": "5a333f4c",
       "full_name": "Олег Петров",
       "accounts_count": 2,
       "total_by_currency": {
         "RUB": 1682890.0
-      }
+      },
+      "unconverted_currencies": [],
+      "ranking_warning": null
     },
     {
-      "client_id": "9ab32d44",
+      "client_id": "48a94cbf",
       "full_name": "Анна Смирнова",
       "accounts_count": 4,
       "total_by_currency": {
         "RUB": 938475.0,
         "USD": 4900.0
-      }
+      },
+      "unconverted_currencies": [],
+      "ranking_warning": null
     },
     {
-      "client_id": "fc186c9f",
+      "client_id": "4d17283c",
       "full_name": "Дмитрий Иванов",
       "accounts_count": 2,
       "total_by_currency": {
         "EUR": 2900.0,
         "RUB": 19395.0
-      }
+      },
+      "unconverted_currencies": [],
+      "ranking_warning": null
     },
     {
-      "client_id": "17fc799e",
+      "client_id": "423967dd",
       "full_name": "Мария Смирнова",
       "accounts_count": 3,
       "total_by_currency": {
         "RUB": 45650.0
-      }
+      },
+      "unconverted_currencies": [],
+      "ranking_warning": null
     },
     {
-      "client_id": "1bfab76a",
+      "client_id": "c32eb6bc",
       "full_name": "Елена Фёдорова",
       "accounts_count": 1,
       "total_by_currency": {
         "RUB": 2000.0
-      }
+      },
+      "unconverted_currencies": [],
+      "ranking_warning": null
     }
   ],
   "audit_stats": {

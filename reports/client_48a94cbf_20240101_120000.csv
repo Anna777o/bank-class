@@ -1,0 +1,5 @@
+client_id,client_name,account_id,account_type,currency,balance,status,created_at
+48a94cbf,Анна Смирнова,0ebe49e8,BankAccount,RUB,837985.0,active,2023-01-01T00:00:00
+48a94cbf,Анна Смирнова,ae3ceb38,SavingsAccount,RUB,100500,active,2024-01-01T12:00:00
+48a94cbf,Анна Смирнова,0d62f6bb,BankAccount,USD,4900.0,active,2024-01-01T12:00:00
+48a94cbf,Анна Смирнова,c03e06a9,PremiumAccount,RUB,-10.0,active,2024-01-01T12:00:00

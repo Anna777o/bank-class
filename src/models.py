@@ -343,6 +343,17 @@ class Bank():
         ("USD", "RUB"): 90.0, ("RUB", "USD"): 0.011,
         ("EUR", "RUB"): 100.0, ("RUB", "EUR"): 0.010,
         ("USD", "EUR"): 0.92, ("EUR", "USD"): 1.09,
+        ("RUB", "KZT"): 5.5,   ("KZT", "RUB"): 1 / 5.5,
+    # RUB ↔ CNY  (1 CNY ≈ 12.5 RUB)
+        ("RUB", "CNY"): 0.08,  ("CNY", "RUB"): 12.5,
+    # USD ↔ KZT  (1 USD ≈ 495 KZT)
+        ("USD", "KZT"): 495.0, ("KZT", "USD"): 1 / 495,
+    # USD ↔ CNY
+        ("USD", "CNY"): 7.2,   ("CNY", "USD"): 1 / 7.2,
+    # EUR ↔ KZT
+        ("EUR", "KZT"): 545.0, ("KZT", "EUR"): 1 / 545,
+    # EUR ↔ CNY
+        ("EUR", "CNY"): 7.85,  ("CNY", "EUR"): 1 / 7.85,
         })
         self.base_currency = base_currency
         self._now = now_provider or datetime.now
@@ -642,30 +653,46 @@ class Bank():
         return dict(totals)
 
     def get_clients_ranking(self) -> list[tuple[Client, dict[str, float]]]:
-        def _to_base(totals: dict[str, float]) -> float:
+        def _to_base(totals: dict[str, float]) -> tuple[float, list[str]]:
             total = 0.0
+            unconverted: list[str] = []
             for ccy, amount in totals.items():
                 if ccy == self.base_currency:
                     total += amount
-                else:
-                    try:
-                        total += self.converter.convert(
+                    continue
+                try:
+                    total += self.converter.convert(
                         amount, ccy, self.base_currency,
                         )
-                    except InvalidOperationError:
+                except InvalidOperationError:
+                        unconverted.append(ccy)
                         logger.warning(
                         "No rate %s→%s for ranking; using 0",
                         ccy, self.base_currency,
                     )
-            return total
-        ranking = [
-            (client, self.get_total_balance(client.client_id))
-            for client in self.clients.values()
-        ]
-    # Сортировка по RUB 
-        ranking.sort(key=lambda x: _to_base(x[1]), reverse=True)
-        return ranking
+            return total, unconverted
+        ranked = []
+        for client in self.clients.values():
+            totals = self.get_total_balance(client.client_id)
+            base_sum, unconverted = _to_base(totals)
+        # Клиенты с неконвертированными валютами — в конец (unranked)
+            sort_key = (0 if unconverted else 1, base_sum)
+            ranked.append((client, totals, unconverted, sort_key))
 
+    # Сортируем: сначала все «полностью конвертируемые» по убыванию,
+    # затем — с неконвертированными (по убыванию base_sum среди них)
+        ranked.sort(key=lambda x: x[3], reverse=True)
+
+    # Логируем предупреждение один раз (не в цикле)
+        for client, totals, unconverted, _ in ranked:
+            if unconverted:
+                logger.warning(
+                "Client %s ranking uses 0 for currencies without rate: %s. "
+                "Totals: %s",
+                    client.client_id, unconverted, totals,
+                )
+
+        return [(client, totals) for client, totals, _, _ in ranked]
     # ---------- Переводы ----------
     def calculate_external_commission(
         self,

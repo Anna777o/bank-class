@@ -197,11 +197,23 @@ class ReportBuilder:
         ranking = self.bank.get_clients_ranking()[:5]
         top_clients: list[dict] = []
         for client, totals_by_currency in ranking:
+            unconverted = []
+            for ccy in totals_by_currency:
+                if ccy == self.bank.base_currency:
+                    continue
+                try:
+                    self.bank.converter.convert(1.0, ccy, self.bank.base_currency)
+                except InvalidOperationError:
+                    unconverted.append(ccy)
             top_clients.append({
             "client_id": client.client_id,
             "full_name": client.full_name,
             "accounts_count": len(client.account_ids),
-            "total_by_currency": dict(totals_by_currency),   
+            "total_by_currency": dict(totals_by_currency),  
+            "unconverted_currencies": unconverted,        # ← добавить
+            "ranking_warning": (
+                f"Нет курса: {', '.join(unconverted)}" if unconverted else None
+            ), 
             })
 
         return {
@@ -484,6 +496,7 @@ class ReportBuilder:
             per_ccy = ", ".join(
                 f"{v:,.2f} {k}" for k, v in sorted(c["total_by_currency"].items())
             ) or "—"
+            warning = f" {c['ranking_warning']}" if c.get("ranking_warning") else ""
             lines.append(
                 f"  {i}. {c['full_name']:<25s} — {per_ccy} "
                 f"({c['accounts_count']} счетов)"

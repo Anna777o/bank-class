@@ -1570,3 +1570,27 @@ def test_chart_balance_flow_missing_rate_no_crash(setup):
     fig = b.chart_balance_flow(setup["anna"].client_id, transactions=[tx])
     assert fig is not None
     plt.close(fig)
+
+def test_ranking_includes_kzt_and_cny(setup):
+    """KZT/CNY должны конвертироваться в базовую, не обнуляться."""
+    now = lambda: datetime(2024, 1, 1, 12, 0)
+    bank = Bank(now_provider=now, audit_log=AuditLog(now_provider=now))
+    poor = Client("Poor", date(1990, 1, 1), {}, "p")
+    rich = Client("Rich", date(1990, 1, 1), {}, "p")
+    bank.add_client(poor)
+    bank.add_client(rich)
+
+    bank.open_account(poor.client_id, "basic", balance=1, currency="RUB")
+    bank.open_account(rich.client_id, "basic", balance=1000000, currency="KZT")
+
+    ranking = bank.get_clients_ranking()
+    print(ranking)
+    assert ranking[0][0] == rich
+    assert ranking[0][1]["KZT"] == 1_000_000
+
+
+def test_ranking_all_declared_currencies_convertible(setup):
+    """Все 5 валют должны конвертироваться в RUB без InvalidOperationError."""
+    bank = setup["bank"]
+    for ccy in ["USD", "EUR", "KZT", "CNY"]:
+        bank.converter.convert(1.0, ccy, "RUB")
